@@ -403,7 +403,7 @@
     (uuid f632fedf-26d7-4218-967d-65a768335339)
   )
 
-  (text ".tran 0.1 2" (at 34.29 100.33 0)
+  (text ".tran 0.1 0.5" (at 34.29 100.33 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 359ce2f8-03aa-4958-a85c-4aea49146b14)
   )
@@ -602,7 +602,7 @@
     (property "Sim.Pins" "1=+ 2=-" (at 68.58 158.75 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Sim.Params" "dc=0 ampl=1.65 f=400 ac=1" (at 72.39 161.1602 0)
+    (property "Sim.Params" "dc=0 ampl=1.65 f=200 ac=1" (at 72.39 161.1602 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Sim.Type" "SIN" (at 68.58 158.75 0)

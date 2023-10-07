@@ -489,10 +489,6 @@
     [
       "b4185304-bcce-4cb1-98f3-8bffc8e76c1e",
       "OpAmp"
-    ],
-    [
-      "be10975b-9f89-4599-837e-7558b87f1253",
-      "OpAmpSimulation"
     ]
   ],
   "text_variables": {}

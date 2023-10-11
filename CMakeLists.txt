@@ -37,5 +37,8 @@ file(GLOB_RECURSE SOURCES "src/common/*.c")
 add_executable("${EXECUTABLE_NAME}" ${SOURCES})
 target_include_directories(${EXECUTABLE_NAME} PUBLIC ${TARGET_PREFIX} ${COMMON_INCLUDE_DIRECTORIES})
 
+# Recurse into building the taget-dependent code
+add_subdirectory("${TARGET_PREFIX}")
+
 # Link the executable to the libraries
 target_link_libraries("${PROJECT_NAME}" PUBLIC ${LINKED_LIBRARIES})

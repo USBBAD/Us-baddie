@@ -10,7 +10,6 @@
  * For more details, please refer to PM0056 (the programming manual), 2.3.2,
  * "Exception types"
  */
-
 	.section .text.resetIsr
 	.type resetIsr, %function
 resetIsr:

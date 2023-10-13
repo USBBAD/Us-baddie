@@ -9,7 +9,7 @@ PROVIDE(gMspInitial = ORIGIN(SRAM) + LENGTH(SRAM));  /* Initial value for the MS
 
 SECTIONS {
 	.vector_table ORIGIN(FLASH) : {
-		*(.vector_table.*)
+		KEEP(*(.vector_table.*));
 	} > FLASH
 
 	.text : {

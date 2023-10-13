@@ -5,6 +5,9 @@ Various platform-dependent code pieces
 # Build
 
 - Libraries here are GUARANTEED to be provided with variables specified under "COMMON VARIABLES" section (see [the core CMakeLists.txt](./../../CMakeLists.txt));
+- Libraries here MUST be linked as static libraries
+- Libraries here MUST provide linking arguments for the target linker
+	- Libraries here MUST expose the linking arguments to the object those will be linked against through use of `PUBLIC` keyword, so those will be "inherited" by the entire application code
 
 # Code
 

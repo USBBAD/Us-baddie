@@ -1,3 +1,22 @@
+
+	.syntax unified
+	.cpu cortex-m1
+	.fpu softvfp
+	.thumb
+
+/*
+ * "Reset handler". Will be called first the MCU is launched.
+ *
+ * For more details, please refer to PM0056 (the programming manual), 2.3.2,
+ * "Exception types"
+ */
+
+	.section .text.resetIsr
+	.type resetIsr, %function
+resetIsr:
+	bl main
+	trap
+
 /*
  * STM32-specific vector table
  *
@@ -5,12 +24,6 @@
  * It is only guaranteed to provide correct values for what is used in the
  * current project. Use discretion when building your own stuff on it.
  */
-
-	.syntax unified
-	.cpu cortex-m1
-	.fpu softvfp
-	.thumb
-
 	.global gStm32VectorTable
 
 	.section .vector_table, "a" /* Allocatable section */, %progbits /* Executable code */
@@ -18,7 +31,7 @@
 	.size gStm32VectorTable, .-gStm32VectorTable
 gStm32VectorTable:
 	.word gMspInitial
-	.word Reset_Handler
+	.word resetIsr
 	.word NMI_Handler
 	.word HardFault_Handler
 	.word MemManage_Handler

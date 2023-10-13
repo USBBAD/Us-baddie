@@ -26,16 +26,14 @@ endif()
 # COMMON VARIABLES. Variables globally accessible by all subs
 
 # Include directories that are common for all sub-s
-set(COMMON_INCLUDE_DIRECTORIES
-	"src/common"
-)
+get_filename_component(COMMON_INCLUDE_DIRECTORIES "src/common" REALPATH)
 
 # CREATE EXECUTABLE
 
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
 file(GLOB_RECURSE SOURCES "src/common/*.c")
 add_executable("${EXECUTABLE_NAME}" ${SOURCES})
-target_include_directories(${EXECUTABLE_NAME} PUBLIC ${TARGET_PREFIX} ${COMMON_INCLUDE_DIRECTORIES})
+target_include_directories(${EXECUTABLE_NAME} PUBLIC ${COMMON_INCLUDE_DIRECTORIES})
 
 # Recurse into building the taget-dependent code
 add_subdirectory("${TARGET_PREFIX}")

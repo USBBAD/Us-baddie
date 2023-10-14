@@ -15,7 +15,7 @@ string(JOIN " " LINKER_OPTIONS
 	"-ffreestanding"  # Imply there is no operating system, or standard library on the target platform
 	"-nostartfiles"  # Do not run startup operations, such as setting global variables to their initial values. Do not use default startup files.
 )
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if (${BUILD_TYPE} STREQUAL "Debug")
 	string(JOIN " " LINKER_OPTIONS
 		${LINKER_OPTIONS}
 		"-g3"
@@ -28,7 +28,7 @@ string(JOIN " " COMPILE_OPTIONS
 	"-mthumb"  # Use thumb code
 	"-mcpu=cortex-m3"  # Specify CPU architecture
 )
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if (${BUILD_TYPE} STREQUAL "Debug")
 	string(JOIN " " COMPILE_OPTIONS
 		${COMPILE_OPTIONS}
 		"-g3"

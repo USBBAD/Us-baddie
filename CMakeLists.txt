@@ -5,21 +5,31 @@ enable_language(ASM)
 
 # BUILD CONFIGURATION (SUBJECT TO FURTHER OPTIONING)
 
+# Target platform
 set(TARGET_PREFIX "src/target/stm32f103c6")
 message(STATUS "Target Prefix is `${TARGET_PREFIX}`")
+
+# Toolchain
 set(TOOLCHAIN "gcc")
 message(STATUS "Using toolchain: `${TOOLCHAIN}`")
 set(GCC_TOOLCHAIN_PATH_PREFIX "")
 set(GCC_TOOLCHAIN_NAME_PREFIX "arm-none-eabi-")
 set(LINKED_LIBRARIES "stm32f103c6")
+
+# Project libraries
 message(STATUS "The following libraries will be compiled: ${LINKED_LIBRARIES}")
-set(CMAKE_BUILD_TYPE "Debug")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+# Build type (Debug, Release)
+#
+# The "CMAKE_BUILD_TYPE" variable is deliberately neglected, as it implicitly
+# affects compilation through, for example, setting optimization flags
+message(STATUS "Build type: ${BUILD_TYPE}")
 
 # Validate build configuration
+
 # Make sure the "build type" is one of the supported types
-if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release"))
-	message(FATAL_ERROR "Unsupported build type: \"${CMAKE_BUILD_TYPE}\"")
+if(NOT ("${BUILD_TYPE}" STREQUAL "Debug" OR "${BUILD_TYPE}" STREQUAL "Release"))
+	message(FATAL_ERROR "Unsupported build type: \"${BUILD_TYPE}\"")
 endif()
 
 # Configure the toolchain

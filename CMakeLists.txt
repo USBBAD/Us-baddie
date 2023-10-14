@@ -16,6 +16,12 @@ message(STATUS "The following libraries will be compiled: ${LINKED_LIBRARIES}")
 set(CMAKE_BUILD_TYPE "Debug")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+# Validate build configuration
+# Make sure the "build type" is one of the supported types
+if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release"))
+	message(FATAL_ERROR "Unsupported build type: \"${CMAKE_BUILD_TYPE}\"")
+endif()
+
 # Configure the toolchain
 if (TOOLCHAIN STREQUAL "gcc")
 	set(GCC_TOOLCHAIN_PREFIX "${GCC_TOOLCHAIN_PATH_PREFIX}${GCC_TOOLCHAIN_NAME_PREFIX}")  # Concat

@@ -4,35 +4,21 @@ BUILD_ELF_PATH = build/usbad
 # Binary image (firmware) path
 OUTPUT_BINARY_IMAGE_PATH = build/firmware.bin
 
-# Project configuration file name
-CONFIG_NAME = ProjectConfiguration.make
-
 # GCC toolchain software
 OBJDUMP = arm-none-eabi-objdump
 OBJCOPY = arm-none-eabi-objcopy
 
-# Debug or release
-BUILD_TYPE ?= Release 
-
-# Configure the project
-
-ifneq ($(wildcard ProjectConfiguration.make),)
-  include ProjectConfiguration.make
-endif
-
-build: $(CONFIG_NAME)
+build_release: $(CONFIG_NAME)
 	mkdir -p build  \
 		&& cd build \
-		&& cmake .. -DBUILD_TYPE=$(BUILD_TYPE) \
+		&& cmake .. -DBUILD_TYPE=Release \
 		&& $(MAKE) -j$(shell nproc)
 
-
-# [Re]configure the project
-$(CONFIG_NAME):
-	@echo --- Configuring project...
-	@echo BUILD_TYPE = $(BUILD_TYPE) > ProjectConfiguration.make
-	cat ProjectConfiguration.make
-	@echo ---
+build_debug: $(CONFIG_NAME)
+	mkdir -p build  \
+		&& cd build \
+		&& cmake .. -DBUILD_TYPE=Debug \
+		&& $(MAKE) -j$(shell nproc)
 
 # Run `make clean` in build directory
 clean:

@@ -10,8 +10,10 @@
  * For more details, please refer to PM0056 (the programming manual), 2.3.2,
  * "Exception types"
  */
+	.global resetIsr
 	.section .text.resetIsr
 	.type resetIsr, %function
+	.align 4
 resetIsr:
 	bl main
 

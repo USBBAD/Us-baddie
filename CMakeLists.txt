@@ -13,6 +13,8 @@ set(GCC_TOOLCHAIN_PATH_PREFIX "")
 set(GCC_TOOLCHAIN_NAME_PREFIX "arm-none-eabi-")
 set(LINKED_LIBRARIES "stm32f103c6")
 message(STATUS "The following libraries will be compiled: ${LINKED_LIBRARIES}")
+set(CMAKE_BUILD_TYPE "Debug")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Configure the toolchain
 if (TOOLCHAIN STREQUAL "gcc")

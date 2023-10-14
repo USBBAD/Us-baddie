@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 set(CMAKE_C_STANDARD 99)
 project(usbad)
+enable_language(ASM)
 
 # BUILD CONFIGURATION (SUBJECT TO FURTHER OPTIONING)
 
@@ -19,6 +20,7 @@ if (TOOLCHAIN STREQUAL "gcc")
 	message(STATUS "The toolchain prefix is: `${GCC_TOOLCHAIN_PREFIX}`")
 	set(CMAKE_C_COMPILER "${GCC_TOOLCHAIN_PREFIX}gcc")
 	set(CMAKE_CXX_COMPILER "${GCC_TOOLCHAIN_PREFIX}g++")
+	set(CMAKE_ASM_COMPILER "${GCC_TOOLCHAIN_PREFIX}as")
 else()
 	message(FATAL_ERROR "No toolchain has been specified")
 endif()

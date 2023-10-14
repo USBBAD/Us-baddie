@@ -10,7 +10,6 @@ get_filename_component(LINKER_SCRIPT_PATH "./stm32f103c6.ld" REALPATH)
 # Specify linker options
 string(JOIN " " LINKER_OPTIONS
 	"-Wl,-T,${LINKER_SCRIPT_PATH}"
-	"-g3"  # Generate as much debug information as possible
 	"-mcpu=cortex-m3"  # Target platform
 	"-mlittle-endian"  # Use little-endian format
 	"-ffreestanding"  # Imply there is no operating system, or standard library on the target platform

@@ -14,7 +14,12 @@
 	.type resetIsr, %function
 resetIsr:
 	bl main
-	trap
+
+	.section .text.defaultIsrHandler
+	.type defaultIsrHandler, %function
+	.align 4
+defaultIsrHandler:
+	b defaultIsrHandler
 
 /*
  * STM32-specific vector table

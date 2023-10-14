@@ -6,6 +6,8 @@ MEMORY {
 }
 
 PROVIDE(gMspInitial = ORIGIN(SRAM) + LENGTH(SRAM));  /* Initial value for the MSP (main stack pointer) */
+EXTERN(gStm32VectorTable);
+EXTERN(resetIsr)
 
 SECTIONS {
 	.vector_table ORIGIN(FLASH) : {
@@ -14,6 +16,7 @@ SECTIONS {
 
 	.text : {
 		*(.text .text.*);
+		KEEP(*(.text.resetIsr))
 	} > FLASH
 
 	.rodata : {

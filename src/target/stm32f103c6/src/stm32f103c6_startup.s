@@ -16,6 +16,9 @@
 	.align 4
 resetIsr:
 	bl main
+	b resetIsrTrap
+resetIsrTrap:
+	b resetIsrTrap
 
 	.section .text.defaultIsrHandler
 	.type defaultIsrHandler, %function

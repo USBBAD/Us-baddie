@@ -27,26 +27,26 @@ SECTIONS {
 	/* Uninitialized (zero-initialized) static data */
 	.bss : {
 		. = ALIGN(4);
-		_sbss = .;
+		gBssStart = .;
 		*(.bss .bss.*)
 		. = ALIGN(4);
-		_ebss = .;
+		gBssEnd = .;
 	} > SRAM
 
 	/* Non zero-initialized static data */
 	.data : AT(ADDR(.rodata) + SIZEOF(.rodata)) /* Map the initial values onto flash. */ {
 		. = ALIGN(4);
 		/* Pointer for further initialization of `.data`, mapped to RAM */
-		_sdata = .;
+		gRamDataStart = .;
 		*(.data .data.*);
 		. = ALIGN(4);
 		/* Pointer for further initialization of `.data`, mapped to RAM */
-		_edata = .;
+		gRamDataEnd = .;
 	} > SRAM
 
 	/* Provide a symbol of the non zero-initialized data's load address for
 	 * forther use (mapped to Flash) */
-	_sidata = LOADADDR(.data);
+	gFlashDataStart = LOADADDR(.data);
 
 	/* The remaning space is where heap and stack reside */
 	.heap_and_stack : {

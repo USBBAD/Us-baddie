@@ -1,8 +1,7 @@
-
-	.syntax unified
-	.cpu cortex-m3
-	.fpu softvfp
-	.thumb
+.syntax unified
+.cpu cortex-m3
+.fpu softvfp
+.thumb
 
 /*
  * "Reset handler". Will be called first the MCU is launched.
@@ -10,10 +9,10 @@
  * For more details, please refer to PM0056 (the programming manual), 2.3.2,
  * "Exception types"
  */
-	.global resetIsr
-	.section .text.resetIsr
-	.type resetIsr, %function
-	.align 4
+.global resetIsr
+.section .text.resetIsr
+.type resetIsr, %function
+.align 4
 resetIsr:
 	bl main
 	b resetIsrTrap
@@ -33,11 +32,10 @@ defaultIsrHandler:
  * It is only guaranteed to provide correct values for what is used in the
  * current project. Use discretion when building your own stuff on it.
  */
-	.global gStm32VectorTable
-
-	.section .vector_table, "a" /* Allocatable section */, %progbits /* Executable code */
-	.type gStm32VectorTable, %object /* Data object */
-	.size gStm32VectorTable, .-gStm32VectorTable
+.global gStm32VectorTable
+.section .vector_table, "a" /* Allocatable section */, %progbits /* Executable code */
+.type gStm32VectorTable, %object /* Data object */
+.size gStm32VectorTable, .-gStm32VectorTable
 gStm32VectorTable:
 	.word gMspInitial
 	.word resetIsr

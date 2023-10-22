@@ -10,4 +10,6 @@
 int main(void)
 {
 	targetInitialize();
+
+	while (1);
 }

@@ -40,4 +40,4 @@ image:
 	@echo Prepare image for uploading onto target
 	$(OBJCOPY) -O binary $(BUILD_ELF_PATH) $(OUTPUT_BINARY_IMAGE_PATH)
 
-.PHONY: build
+.PHONY: build_release build_debug

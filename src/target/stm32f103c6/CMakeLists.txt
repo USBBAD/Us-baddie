@@ -34,6 +34,7 @@ if (${BUILD_TYPE} STREQUAL "Debug")
 		"-g3"
 	)
 endif()
+target_link_libraries(stm32cubef1)  # To provide the opportunity to include headers
 message(STATUS "Using compiler options: `${COMPILE_OPTIONS}`")
 target_compile_options(stm32f103c6 PUBLIC "SHELL:${COMPILE_OPTIONS}")
 set_target_properties(stm32f103c6 PROPERTIES LINKER_LANGUAGE C)

@@ -1,0 +1,4 @@
+device stm32f103c6
+if swd
+speed 100
+connect

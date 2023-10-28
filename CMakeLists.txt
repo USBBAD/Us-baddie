@@ -14,7 +14,8 @@ set(TOOLCHAIN "gcc")
 message(STATUS "Using toolchain: `${TOOLCHAIN}`")
 set(GCC_TOOLCHAIN_PATH_PREFIX "")
 set(GCC_TOOLCHAIN_NAME_PREFIX "arm-none-eabi-")
-set(LINKED_LIBRARIES "stm32f103c6" "stm32cubef1")
+set(USE_STM32CUBEF1_LIBRARY ON)
+set(USE_STM32F103C6_TARGET ON)
 
 # Project libraries
 message(STATUS "The following libraries will be compiled: ${LINKED_LIBRARIES}")
@@ -43,23 +44,8 @@ else()
 	message(FATAL_ERROR "No toolchain has been specified")
 endif()
 
-# COMMON VARIABLES. Variables globally accessible by all subs
-
-# Include directories that are common for all sub-s
-get_filename_component(COMMON_INCLUDE_DIRECTORIES "src/common" REALPATH)
-
-# CREATE EXECUTABLE
-
-set(EXECUTABLE_NAME "${PROJECT_NAME}")
-file(GLOB_RECURSE SOURCES "src/common/*.c")
-add_executable("${EXECUTABLE_NAME}" ${SOURCES})
-target_include_directories(${EXECUTABLE_NAME} PUBLIC ${COMMON_INCLUDE_DIRECTORIES})
-
 # Build libraries
 add_subdirectory(lib)
 
 # Recurse into building the taget-dependent code
-add_subdirectory("${TARGET_PREFIX}")
-
-# Link the executable to the libraries
-target_link_libraries("${PROJECT_NAME}" PUBLIC ${LINKED_LIBRARIES})
+add_subdirectory(src)

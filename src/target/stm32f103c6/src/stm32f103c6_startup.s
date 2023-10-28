@@ -19,9 +19,9 @@ resetIsr:
 resetIsrTrap:
 	b resetIsrTrap
 
-	.section .text.defaultIsrHandler
-	.type defaultIsrHandler, %function
-	.align 4
+.section .text.defaultIsrHandler
+.type defaultIsrHandler, %function
+.align 4
 defaultIsrHandler:
 	b defaultIsrHandler
 

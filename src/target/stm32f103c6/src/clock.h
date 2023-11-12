@@ -17,4 +17,7 @@ void clockInitialize();
 /// \brief Returns SYSCLK frequency (see RM0008, rev. 21, p.93)
 uint32_t clockGetSysclkFrequency();
 
+/// \brief Returns APB2's prescaler value
+uint32_t clockGetApb2Prescaler();
+
 #endif // TARGET_STM32F103C6_SRC_CLOCK_HPP_

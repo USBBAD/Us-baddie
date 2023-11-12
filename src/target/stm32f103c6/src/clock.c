@@ -54,3 +54,8 @@ uint32_t clockGetSysclkFrequency()
 	return HSI_OUTPUT_FREQUENCY;
 #endif
 }
+
+uint32_t clockGetApb2Prescaler()
+{
+	return 1U;
+}

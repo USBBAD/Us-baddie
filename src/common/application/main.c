@@ -10,6 +10,7 @@
 int main(void)
 {
 	targetInitialize();
+	// TODO: USART configuration
 
 	while (1);
 }

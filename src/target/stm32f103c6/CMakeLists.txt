@@ -12,7 +12,6 @@ string(JOIN " " LINKER_OPTIONS
 	"-Wl,-T,${LINKER_SCRIPT_PATH}"
 	"-mcpu=cortex-m3"  # Target platform
 	"-mlittle-endian"  # Use little-endian format
-	"-ffreestanding"  # Imply there is no operating system, or standard library on the target platform
 	"-nostartfiles"  # Do not run startup operations, such as setting global variables to their initial values. Do not use default startup files.
 )
 if (${BUILD_TYPE} STREQUAL "Debug")

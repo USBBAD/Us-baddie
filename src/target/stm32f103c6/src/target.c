@@ -5,7 +5,9 @@
 //  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
 //
 
+#include "clock.h"
 #include "target/target.h"
+#include "uart.h"
 
 struct Target
 {
@@ -49,6 +51,8 @@ TargetHandle targetInitialize()
 {
 	initializeBss();
 	initializeData();
+	clockInitialize();
+	uartConfigure();
 
 	return (TargetHandle)&sTarget;
 }

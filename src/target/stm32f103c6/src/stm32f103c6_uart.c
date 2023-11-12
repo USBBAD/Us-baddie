@@ -13,6 +13,8 @@
 #define USBAD_STM32F103C6_ENABLE_USART_1 (1)
 #define USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED (1)
 
+// TODO: USARTs' ISRs
+
 /// \brief Initializes RCC registers
 static void configureClock();
 

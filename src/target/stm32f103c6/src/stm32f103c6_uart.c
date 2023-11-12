@@ -10,6 +10,8 @@
 
 #define USBAD_STM32F103C6_USARTDIV_COEFFICIENT (16.0f)
 #define USBAD_STM32F103C6_BRR_FRACTION_NBITS (4)
+#define USBAD_STM32F103C6_ENABLE_USART_1 (1)
+#define USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED (1)
 
 /// \brief Initializes RCC registers
 static void configureClock();
@@ -19,6 +21,8 @@ static uint32_t getUsart1InputClockFrequency();
 
 /// \brief see RM0008, rev. 21, p. 1136, "Fractional baudrate"
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
+
+static void enableInterrupts();
 
 static void configureClock()
 {
@@ -42,6 +46,13 @@ static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFre
 	fraction = (uint32_t)fractionf;
 
 	return (mantissa << USBAD_STM32F103C6_BRR_FRACTION_NBITS) | fraction;
+}
+
+static void enableInterrupts()
+{
+#if USBAD_STM32F103C6_ENABLE_USART_1 && USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED
+	NVIC_EnableIRQ(USART1_IRQn);
+#endif
 }
 
 void uartUp()

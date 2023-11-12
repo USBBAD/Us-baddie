@@ -7,7 +7,7 @@
 
 #include "clock.h"
 #include "target/target.h"
-#include "uart.h"
+#include "stm32f103c6_uart.h"
 
 struct Target
 {
@@ -52,7 +52,6 @@ TargetHandle targetInitialize()
 	initializeBss();
 	initializeData();
 	clockInitialize();
-	uartConfigure();
 
 	return (TargetHandle)&sTarget;
 }

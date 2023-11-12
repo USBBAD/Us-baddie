@@ -42,7 +42,7 @@ void clockInitialize()
 	// Enable SRAM
 	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
 	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
-	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN | RCC_APB2ENR_ADC1EN;
+	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
 	// Enable USB
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
 }

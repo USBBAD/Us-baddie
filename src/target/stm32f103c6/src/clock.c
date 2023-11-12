@@ -6,6 +6,7 @@
 //
 
 #include <stm32f103x6.h>
+#include <stdint.h>
 
 /// Whether HSI should be used as the clock source
 #define USE_HSI_AS_CLOCK_SOURCE (1)
@@ -15,7 +16,7 @@
 #endif  /* USE_HSI_AS_CLOCK_SOURCE */
 
 /// Internal clock source frequency
-#define HSI_OUTPUT_FREQUENCY (8000000)
+#define HSI_OUTPUT_FREQUENCY (8000000U)
 
 #define USE_HSI_AS_SYSTEM_CLOCK (1)
 
@@ -45,4 +46,11 @@ void clockInitialize()
 	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
 	// Enable USB
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
+}
+
+uint32_t clockGetSysclkFrequency()
+{
+#ifdef USE_HSI_AS_SYSTEM_CLOCK
+	return HSI_OUTPUT_FREQUENCY;
+#endif
 }

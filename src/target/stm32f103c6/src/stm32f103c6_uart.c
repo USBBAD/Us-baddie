@@ -55,12 +55,16 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 	volatile USART_TypeDef *usart = 0;
 
 	switch (aUartNumber) {
+
+#if USBAD_STM32F103C6_ENABLE_USART_1
 		case 1: {
 			usart = USART1;
 			uartFrequency = getUsart1InputClockFrequency();
 
 			break;
 		}
+#endif
+
 		default:
 			return 0;
 	}

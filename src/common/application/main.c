@@ -5,12 +5,14 @@
 //  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
 //
 
+#include "hal/uart.h"
 #include "target/target.h"
 
 int main(void)
 {
 	targetInitialize();
-	// TODO: USART configuration
+	uartConfigure(1, 115200);
 
-	while (1);
+	while (1) {
+	}
 }

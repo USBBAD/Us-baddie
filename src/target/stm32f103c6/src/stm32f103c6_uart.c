@@ -1,9 +1,11 @@
-//
+﻿//
 // uart.c
 //
 // Created on: Oct 28, 2023
 //     Author: Dmitry Murashov (dmtr <DOT> murashov <AT> <GMAIL> <DOT> <COM>)
 //
+// Module-wide constraints:
+// USART1 CR1 register is only set from thread mode
 
 #include "clock.h"
 #include "utility/ring_buffer.h"
@@ -31,6 +33,10 @@ static uint32_t getUsart1InputClockFrequency();
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
 static void enableInterrupts();
+
+/// \brief Sets USART's "TX Empty interrupt enable" and other TX-related
+/// interrupts flags
+static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled);
 
 void usart1Isr()
 {

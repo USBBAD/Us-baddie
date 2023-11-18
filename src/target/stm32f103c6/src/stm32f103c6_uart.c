@@ -100,3 +100,35 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 	// Enable USART, "TX empty" interrupt, "RX not empty" interrupt
 	usart->CR1 |= USART_CR1_UE | USART_CR1_TXEIE | USART_CR1_RXNEIE;
 }
+
+int uartTryPuts(uint8_t aUartNumber, const char *aString)
+{
+	int interruptNumber = 0;
+	RingBuffer *txRingBuffer = 0;
+	USART_TypeDef *usart = 0;
+
+	switch (aUartNumber) {
+
+#if USBAD_STM32F103C6_ENABLE_USART_1
+		case 1:
+			interruptNumber = USART1_IRQn;
+			txRingBuffer = &sUsart1TxRingBuffer;
+			usart = USART1;
+
+			break;
+#endif  // if USBAD_STM32F103C6_ENABLE_USART_1
+
+		default:
+			return 0;  // Unsupported UART
+	}
+
+	usartSetTxInterruptsEnabled(usart, 0);
+
+	for (register const char *it = aString; *it != '\0'; ++it) {
+		ringBufferPutc(txRingBuffer, *aString);
+	}
+
+	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR
+
+	return 1;
+}

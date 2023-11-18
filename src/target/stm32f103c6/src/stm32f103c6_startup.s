@@ -90,7 +90,7 @@ gStm32VectorTable:
 	.word I2C2_ER_IRQHandler
 	.word SPI1_IRQHandler
 	.word SPI2_IRQHandler
-	.word USART1_IRQHandler
+	.word usart1Isr
 	.word USART2_IRQHandler
 	.word USART3_IRQHandler
 	.word EXTI15_10_IRQHandler
@@ -278,8 +278,8 @@ gStm32VectorTable:
 	.weak SPI2_IRQHandler
 	.thumb_set SPI2_IRQHandler,defaultIsrHandler
 
-	.weak USART1_IRQHandler
-	.thumb_set USART1_IRQHandler,defaultIsrHandler
+	.weak usart1Isr
+	.thumb_set usart1Isr,defaultIsrHandler
 
 	.weak USART2_IRQHandler
 	.thumb_set USART2_IRQHandler,defaultIsrHandler

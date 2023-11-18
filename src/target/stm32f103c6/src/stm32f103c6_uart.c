@@ -6,12 +6,18 @@
 //
 
 #include "clock.h"
+#include "utility/ring_buffer.h"
 #include <stm32f103x6.h>
 
 #define USBAD_STM32F103C6_USARTDIV_COEFFICIENT (16.0f)
 #define USBAD_STM32F103C6_BRR_FRACTION_NBITS (4)
 #define USBAD_STM32F103C6_ENABLE_USART_1 (1)
 #define USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED (1)
+
+#if USBAD_STM32F103C6_ENABLE_USART_1
+static RingBuffer sUsart1TxRingBuffer;
+static RingBuffer sUsart1RxRingBuffer;
+#endif  // if USBAD_STM32F103C6_ENABLE_USART_1
 
 // TODO: USARTs' ISRs
 
@@ -25,6 +31,10 @@ static uint32_t getUsart1InputClockFrequency();
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
 static void enableInterrupts();
+
+void usart1Isr()
+{
+}
 
 static void configureClock()
 {
@@ -73,6 +83,8 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 		case 1: {
 			usart = USART1;
 			uartFrequency = getUsart1InputClockFrequency();
+			ringBufferInitialize(&sUsart1RxRingBuffer);
+			ringBufferInitialize(&sUsart1TxRingBuffer);
 
 			break;
 		}

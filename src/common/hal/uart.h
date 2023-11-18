@@ -14,4 +14,8 @@
 /// \returns >0, if successful, <=0 otherwise
 int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate);
 
+/// \brief Prints a string into UART output
+/// \returns >0, if successful, <= otherwise
+int uartTryPuts(uint8_t aUartNumber, const char *aOutput);
+
 #endif // COMMON_HAL_UART_H_

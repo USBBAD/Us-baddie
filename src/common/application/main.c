@@ -14,5 +14,8 @@ int main(void)
 	uartConfigure(1, 115200);
 
 	while (1) {
+		for (int delay = 5000; delay--;) {
+			uartTryPuts(1, "Hello, world!");
+		}
 	}
 }

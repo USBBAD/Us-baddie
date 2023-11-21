@@ -87,6 +87,15 @@ static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsE
 	}
 }
 
+static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled)
+{
+	if (aIsEnabled) {
+		aUsart->CR1 |= USART_CR1_TE;
+	} else {
+		aUsart->CR1 &= ~USART_CR1_TE;
+	}
+}
+
 void uartUp()
 {
 	configureClock();
@@ -151,6 +160,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 	}
 
 	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR
+	usartSetTransmissionEnabled(usart, 1);
 
 	return 1;
 }

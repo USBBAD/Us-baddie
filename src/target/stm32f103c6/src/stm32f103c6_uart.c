@@ -35,11 +35,13 @@ static uint32_t getUsart1InputClockFrequency();
 /// \brief see RM0008, rev. 21, p. 1136, "Fractional baudrate"
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
-static void enableAllUartInterrupts();
+static void enableAllUsartIsrs();
 
 /// \brief Sets USART's "TX Empty interrupt enable" and other TX-related
 /// interrupts flags
 static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled);
+
+static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled);
 
 void usart1Isr()
 {
@@ -69,7 +71,7 @@ static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFre
 	return (mantissa << USBAD_STM32F103C6_BRR_FRACTION_NBITS) | fraction;
 }
 
-static void enableAllUartInterrupts()
+static void enableAllUsartIsrs()
 {
 #if USBAD_STM32F103C6_ENABLE_USART_1 && USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED
 	NVIC_EnableIRQ(USART1_IRQn);
@@ -117,6 +119,8 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 
 	// Enable USART, "TX empty" interrupt, "RX not empty" interrupt
 	usart->CR1 |= USART_CR1_UE | USART_CR1_TXEIE | USART_CR1_RXNEIE;
+
+	enableAllUsartIsrs();
 }
 
 int uartTryPuts(uint8_t aUartNumber, const char *aString)

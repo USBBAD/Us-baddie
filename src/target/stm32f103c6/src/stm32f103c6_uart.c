@@ -29,6 +29,8 @@ static RingBuffer sUsart1RxRingBuffer;
 /// \brief Initializes RCC registers
 static void configureClock();
 
+static void configureGpio();
+
 /// \brief Input clock frequency for usart
 static uint32_t getUsart1InputClockFrequency();
 
@@ -59,6 +61,23 @@ static void configureClock()
 	volatile RCC_TypeDef *rcc = RCC;
 
 	rcc->APB2ENR |= RCC_APB2ENR_USART1EN;
+}
+
+static void configureGpio()
+{
+#if USBAD_STM32F103C6_ENABLE_USART_1
+	{
+		volatile GPIO_TypeDef *gpio = GPIOA;
+
+		// Configure TX pin (PA9),  RM0008 rev 21 p 166
+		gpio->CRH |= GPIO_CRH_CNF9_1  // Alternate function push-pull
+			| GPIO_CRH_MODE9_1;  // Mode output, 2 MHz (USART won't require much)
+
+		// Configure RX pin (PA10), input mode pull up
+		gpio->CRH |= GPIO_CRH_MODE10_1;  // Input with PU / PD (we need "pull up")
+		gpio->ODR |= GPIO_ODR_ODR10;  // Pull up (RM0008 rev 21 p 161)
+	}
+#endif //  USBAD_STM32F103C6_ENABLE_USART_1
 }
 
 static uint32_t getUsart1InputClockFrequency()
@@ -106,6 +125,7 @@ static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsE
 void uartUp()
 {
 	configureClock();
+	configureGpio();
 }
 
 int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)

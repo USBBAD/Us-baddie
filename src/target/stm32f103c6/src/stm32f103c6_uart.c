@@ -16,6 +16,9 @@
 #define USBAD_STM32F103C6_ENABLE_USART_1 (1)
 #define USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED (1)
 
+/// \brief USART TX interrupts that are used by the driver
+#define USBAD_STM32F103C6_USART_TX_INTERRUPTS (USART_CR1_TXEIE | USART_CR1_TCIE)
+
 #if USBAD_STM32F103C6_ENABLE_USART_1
 static RingBuffer sUsart1TxRingBuffer;
 static RingBuffer sUsart1RxRingBuffer;
@@ -32,7 +35,7 @@ static uint32_t getUsart1InputClockFrequency();
 /// \brief see RM0008, rev. 21, p. 1136, "Fractional baudrate"
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
-static void enableInterrupts();
+static void enableAllUartInterrupts();
 
 /// \brief Sets USART's "TX Empty interrupt enable" and other TX-related
 /// interrupts flags
@@ -66,11 +69,20 @@ static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFre
 	return (mantissa << USBAD_STM32F103C6_BRR_FRACTION_NBITS) | fraction;
 }
 
-static void enableInterrupts()
+static void enableAllUartInterrupts()
 {
 #if USBAD_STM32F103C6_ENABLE_USART_1 && USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED
 	NVIC_EnableIRQ(USART1_IRQn);
 #endif
+}
+
+static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled)
+{
+	if (aIsEnabled) {
+		aUsart->CR1 |= USBAD_STM32F103C6_USART_TX_INTERRUPTS;
+	} else {
+		aUsart->CR1 &= ~USBAD_STM32F103C6_USART_TX_INTERRUPTS;
+	}
 }
 
 void uartUp()

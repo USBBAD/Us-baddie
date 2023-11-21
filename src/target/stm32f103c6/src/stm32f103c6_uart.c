@@ -45,6 +45,13 @@ static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsE
 
 void usart1Isr()
 {
+	volatile USART_TypeDef *usart = USART1;
+	volatile uint32_t sr = usart->SR;
+	unsigned char nextCharacter = 0;
+
+	if ((sr & (USART_SR_TXE | USART_SR_TC)) || ringBufferTryGetc(&sUsart1TxRingBuffer, &nextCharacter)) {
+		usart->DR = nextCharacter;
+	}
 }
 
 static void configureClock()

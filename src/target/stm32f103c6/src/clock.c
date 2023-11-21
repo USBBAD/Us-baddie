@@ -5,6 +5,7 @@
 //     Author: Dmitry Murashov (dmtr <DOT> murashov <AT> <GMAIL> <DOT> <COM>)
 //
 
+#include "stm32f103c6_uart.h"
 #include <stm32f103x6.h>
 #include <stdint.h>
 
@@ -46,6 +47,8 @@ void clockInitialize()
 	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
 	// Enable USB
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
+
+	uartUp();
 }
 
 uint32_t clockGetSysclkFrequency()

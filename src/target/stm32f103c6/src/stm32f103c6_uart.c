@@ -183,7 +183,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 	usartSetTxInterruptsEnabled(usart, 0);
 
 	for (register const char *it = aString; *it != '\0'; ++it) {
-		ringBufferPutc(txRingBuffer, *aString);
+		ringBufferPutc(txRingBuffer, *it);
 	}
 
 	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR

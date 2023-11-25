@@ -16,10 +16,10 @@ void ringBufferInitialize(RingBuffer *aRingBuffer)
 void ringBufferPutc(RingBuffer *aRingBuffer, unsigned char aCharacter)
 {
 	const unsigned writePosition = (aRingBuffer->readPosition + aRingBuffer->size) & (RING_BUFFER_MAX_SIZE - 1);  // mod <buffer size> if buffer size is exponent of 2
+	aRingBuffer->buffer[writePosition] = aCharacter;
 
 	if (aRingBuffer->size == RING_BUFFER_MAX_SIZE) {
 		aRingBuffer->readPosition = (aRingBuffer->readPosition + 1) & (RING_BUFFER_MAX_SIZE - 1);
-		aRingBuffer->buffer[writePosition] = aCharacter;
 	} else {
 		++aRingBuffer->size;
 	}

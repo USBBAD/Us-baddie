@@ -51,8 +51,12 @@ void usart1Isr()
 	volatile uint32_t sr = usart->SR;
 	unsigned char nextCharacter = 0;
 
-	if ((sr & (USART_SR_TXE | USART_SR_TC)) || ringBufferTryGetc(&sUsart1TxRingBuffer, &nextCharacter)) {
-		usart->DR = nextCharacter;
+	if (sr & (USART_SR_TXE | USART_SR_TC)) {
+		if (ringBufferTryGetc(&sUsart1TxRingBuffer, &nextCharacter)) {
+			usart->DR = nextCharacter;
+		} else {
+			usartSetTxInterruptsEnabled(usart, 0);
+		}
 	}
 }
 

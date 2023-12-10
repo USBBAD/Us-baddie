@@ -192,9 +192,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 	}
 
 	usartSetTxInterruptsEnabled(usart, 0);
-
 	bufferSetPayload(txBuffer, (uint8_t *)aString, strlen(aString));
-
 	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR
 	usartSetTransmissionEnabled(usart, 1);
 

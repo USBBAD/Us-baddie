@@ -7,6 +7,7 @@
 
 #include "buffer.h"
 #include "chelp.h"
+#include <string.h>
 
 void bufferInitalizeViewBuffer(struct ViewBuffer *aBuffer, uint8_t *aStorage, size_t aMaxSize)
 {
@@ -18,6 +19,7 @@ void bufferInitalizeViewBuffer(struct ViewBuffer *aBuffer, uint8_t *aStorage, si
 void bufferSetPayload(void *aBuffer, uint8_t *aPayload, size_t aPayloadLength)
 {
 	((struct ViewBuffer *)aBuffer)->currentSize = USBAD_MIN(aPayloadLength, ((struct ViewBuffer *)aBuffer)->maxSize);
+	memcpy(((struct ViewBuffer *)aBuffer)->storage, aPayload, ((struct ViewBuffer *)aBuffer)->currentSize);
 }
 
 size_t bufferGetPayloadSize(void *aBuffer)

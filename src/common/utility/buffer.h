@@ -21,9 +21,20 @@ struct ViewBuffer {
 	size_t currentSize;
 };
 
+struct ContinuousBufferIterator {
+	uint8_t *current;
+	uint8_t *end;
+};
+
 void bufferInitalizeViewBuffer(struct ViewBuffer *aBuffer, uint8_t *aStorage, size_t aMaxSize);
 void bufferSetPayload(void *aBuffer, uint8_t *aPayload, size_t aPayloadLength);
 size_t bufferGetPayloadSize(void *aBuffer);
+void *bufferGetPayload(void *aBuffer);
+void *bufferInitializeContinuousIterator(void *aBuffer, struct ContinuousBufferIterator *aContinuousIterator);
+int bufferIteratorIsValid(void *aBufferIterator);
+
+/// \pre `bufferIteratorIsValid(aBufferIterator)` returns true
+int bufferIteratorTryGetNextByte(void *aBufferIterator, uint8_t *aOut);
 
 #ifdef __cplusplus
 }

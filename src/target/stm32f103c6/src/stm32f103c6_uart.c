@@ -8,8 +8,10 @@
 // USART1 CR1 register is only set from thread mode
 
 #include "clock.h"
+#include "utility/buffer.h"
 #include "utility/ring_buffer.h"
 #include <stm32f103x6.h>
+#include <string.h>
 
 #define USBAD_STM32F103C6_USARTDIV_COEFFICIENT (16.0f)
 #define USBAD_STM32F103C6_BRR_FRACTION_NBITS (4)
@@ -20,8 +22,10 @@
 #define USBAD_STM32F103C6_USART_TX_INTERRUPTS (USART_CR1_TXEIE | USART_CR1_TCIE)
 
 #if USBAD_STM32F103C6_ENABLE_USART_1
-static RingBuffer sUsart1TxRingBuffer;
-static RingBuffer sUsart1RxRingBuffer;
+#define USBAD_USART1_BUFFER_SIZE (64)
+static char sUsart1TxBuffer[USBAD_USART1_BUFFER_SIZE];
+static struct ViewBuffer sUsart1TxViewBuffer;
+static struct ContinuousBufferIterator sUsart1BufferIterator;
 #endif  // if USBAD_STM32F103C6_ENABLE_USART_1
 
 // TODO: USARTs' ISRs
@@ -51,8 +55,12 @@ void usart1Isr()
 	volatile uint32_t sr = usart->SR;
 	unsigned char nextCharacter = 0;
 
+	if (!bufferIteratorIsValid(&sUsart1BufferIterator)) {
+		bufferInitializeContinuousIterator(&sUsart1TxViewBuffer, &sUsart1BufferIterator);
+	}
+
 	if (sr & (USART_SR_TXE | USART_SR_TC)) {
-		if (ringBufferTryGetc(&sUsart1TxRingBuffer, &nextCharacter)) {
+		if (bufferIteratorTryGetNextByte(&sUsart1BufferIterator, &nextCharacter)) {
 			usart->DR = nextCharacter;
 		} else {
 			usartSetTxInterruptsEnabled(usart, 0);
@@ -143,8 +151,7 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 		case 1: {
 			usart = USART1;
 			uartFrequency = getUsart1InputClockFrequency();
-			ringBufferInitialize(&sUsart1RxRingBuffer);
-			ringBufferInitialize(&sUsart1TxRingBuffer);
+			bufferInitalizeViewBuffer(&sUsart1TxViewBuffer, (uint8_t *)&sUsart1TxBuffer[0], USBAD_USART1_BUFFER_SIZE);
 
 			break;
 		}
@@ -166,7 +173,7 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 int uartTryPuts(uint8_t aUartNumber, const char *aString)
 {
 	int interruptNumber = 0;
-	RingBuffer *txRingBuffer = 0;
+	void *txBuffer = 0;
 	USART_TypeDef *usart = 0;
 
 	switch (aUartNumber) {
@@ -174,7 +181,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 #if USBAD_STM32F103C6_ENABLE_USART_1
 		case 1:
 			interruptNumber = USART1_IRQn;
-			txRingBuffer = &sUsart1TxRingBuffer;
+			txBuffer = &sUsart1TxViewBuffer;
 			usart = USART1;
 
 			break;
@@ -186,9 +193,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 
 	usartSetTxInterruptsEnabled(usart, 0);
 
-	for (register const char *it = aString; *it != '\0'; ++it) {
-		ringBufferPutc(txRingBuffer, *it);
-	}
+	bufferSetPayload(txBuffer, (uint8_t *)aString, strlen(aString));
 
 	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR
 	usartSetTransmissionEnabled(usart, 1);

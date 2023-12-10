@@ -45,7 +45,9 @@ int bufferIteratorIsValid(void *aBufferIterator)
 
 int bufferIteratorTryGetNextByte(void *aBufferIterator, uint8_t *aOut)
 {
-	if (((struct ContinuousBufferIterator *)aBufferIterator)->current == ((struct ContinuousBufferIterator *)aBufferIterator)->end) {
+	if (((struct ContinuousBufferIterator *)aBufferIterator)->current
+		== ((struct ContinuousBufferIterator *)aBufferIterator)->end)
+	{
 		return 0;
 	}
 

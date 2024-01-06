@@ -8,8 +8,6 @@
 // USART1 CR1 register is only set from thread mode
 
 #include "clock.h"
-#include "utility/buffer.h"
-#include "utility/ring_buffer.h"
 #include <stm32f103x6.h>
 #include <string.h>
 
@@ -20,12 +18,63 @@
 
 /// \brief USART TX interrupts that are used by the driver
 #define USBAD_STM32F103C6_USART_TX_INTERRUPTS (USART_CR1_TXEIE | USART_CR1_TCIE)
+#define USBAD_USART1_TX_BUFFER_SIZE (64)
+
+struct Tx {
+	uint8_t *buffer;
+	const uint8_t *it;
+	const uint8_t *itEnd;
+	size_t size;
+};
+
+static int txIsTransmitting(const struct Tx *aTx)
+{
+	return aTx->it != 0;
+}
+
+static int txInit(struct Tx *aTx, const char *aBuffer, size_t aBufferSize)
+{
+	*aTx = (struct Tx) {
+		.buffer = (uint8_t *)aBuffer,
+		.it = (uint8_t *)aBuffer,
+		.itEnd = 0,
+		.size = aBufferSize,
+	};
+}
+
+static int txPutString(struct Tx *aTx, const char *aBuffer)
+{
+	size_t bufferLen = strlen(aBuffer);
+
+	if (bufferLen > aTx->size) {
+		return 0;
+	}
+
+	memcpy(aTx->buffer, aBuffer, strlen(aBuffer));
+	aTx->it = aTx->buffer;
+	aTx->itEnd = aTx->it + bufferLen;
+
+	return 1;
+}
+
+static const uint8_t *txTryPop(struct Tx *aTx)
+{
+	const uint8_t *result = 0;
+
+	if (aTx->it < aTx->itEnd) {
+		result = aTx->it;
+		++aTx->it;
+	} else {
+		aTx->it = 0;
+		aTx->itEnd = 0;
+	}
+
+	return result;
+}
 
 #if USBAD_STM32F103C6_ENABLE_USART_1
-#define USBAD_USART1_BUFFER_SIZE (64)
-static char sUsart1TxBuffer[USBAD_USART1_BUFFER_SIZE];
-static struct ViewBuffer sUsart1TxViewBuffer;
-static struct ContinuousBufferIterator sUsart1BufferIterator;
+static char sUart1TxBuffer[USBAD_USART1_TX_BUFFER_SIZE] = {0};
+static struct Tx sUart1Tx;
 #endif  // if USBAD_STM32F103C6_ENABLE_USART_1
 
 // TODO: USARTs' ISRs
@@ -41,6 +90,8 @@ static uint32_t getUsart1InputClockFrequency();
 /// \brief see RM0008, rev. 21, p. 1136, "Fractional baudrate"
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
+static void enableAllUsartIsrs();
+
 /// \brief Sets USART's "TX Empty interrupt enable" and other TX-related
 /// interrupts flags
 static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled);
@@ -51,16 +102,13 @@ void usart1Isr()
 {
 	volatile USART_TypeDef *usart = USART1;
 	volatile uint32_t sr = usart->SR;
-	unsigned char nextCharacter = 0;
-
-	if (!bufferIteratorIsValid(&sUsart1BufferIterator)) {
-		bufferInitializeContinuousIterator(&sUsart1TxViewBuffer, &sUsart1BufferIterator);
-	}
 
 	if (sr & (USART_SR_TXE | USART_SR_TC)) {
-		if (bufferIteratorTryGetNextByte(&sUsart1BufferIterator, &nextCharacter)) {
-			usart->DR = nextCharacter;
-		} else {
+		const uint8_t *ch = txTryPop(&sUart1Tx);
+
+		if (ch) {
+			usart->DR = *ch;
+		} else {  // TX buffer is empty
 			usartSetTxInterruptsEnabled(usart, 0);
 		}
 	}
@@ -109,6 +157,9 @@ static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFre
 
 static void enableAllUsartIsrs()
 {
+#if USBAD_STM32F103C6_ENABLE_USART_1 && USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED
+	NVIC_EnableIRQ(USART1_IRQn);
+#endif
 }
 
 static void usartSetTxInterruptsEnabled(volatile USART_TypeDef *aUsart, int aIsEnabled)
@@ -146,7 +197,10 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 		case 1: {
 			usart = USART1;
 			uartFrequency = getUsart1InputClockFrequency();
-			bufferInitalizeViewBuffer(&sUsart1TxViewBuffer, (uint8_t *)&sUsart1TxBuffer[0], USBAD_USART1_BUFFER_SIZE);
+
+#if USBAD_STM32F103C6_ENABLE_USART_1
+			txInit(&sUart1Tx, sUart1TxBuffer, USBAD_USART1_TX_BUFFER_SIZE);
+#endif  // USBAD_STM32F103C6_ENABLE_USART_1
 
 			break;
 		}
@@ -162,24 +216,24 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 	// Enable USART, "TX empty" interrupt, "RX not empty" interrupt
 	usart->CR1 |= USART_CR1_UE | USART_CR1_TXEIE | USART_CR1_RXNEIE;
 
-#if USBAD_STM32F103C6_ENABLE_USART_1 && USBAD_STM32F103C6_USART1_TRANSMISSION_ISR_BASED
-	NVIC_EnableIRQ(USART1_IRQn);
-#endif
+	enableAllUsartIsrs();
 }
 
 int uartTryPuts(uint8_t aUartNumber, const char *aString)
 {
 	int interruptNumber = 0;
 	void *txBuffer = 0;
-	USART_TypeDef *usart = 0;
+	volatile USART_TypeDef *usart = 0;
+	struct Tx *tx;
+	int result = 1;
 
 	switch (aUartNumber) {
 
 #if USBAD_STM32F103C6_ENABLE_USART_1
 		case 1:
 			interruptNumber = USART1_IRQn;
-			txBuffer = &sUsart1TxViewBuffer;
 			usart = USART1;
+			tx = &sUart1Tx;
 
 			break;
 #endif  // if USBAD_STM32F103C6_ENABLE_USART_1
@@ -189,9 +243,15 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 	}
 
 	usartSetTxInterruptsEnabled(usart, 0);
-	bufferSetPayload(txBuffer, (uint8_t *)aString, strlen(aString));
+
+	if (txIsTransmitting(tx)) {
+		result = 0;
+	} else if (!txPutString(tx, aString)) {
+		result = 0;
+	}
+
 	usartSetTxInterruptsEnabled(usart, 1);  // TODO: handle setting TXEIE from ISR
 	usartSetTransmissionEnabled(usart, 1);
 
-	return 1;
+	return result;
 }

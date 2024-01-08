@@ -6,8 +6,10 @@
 //
 
 #include "clock.h"
-#include "target/target.h"
+#include "stm32f103c6_adc.h"
+#include "stm32f103c6_dma.h"
 #include "stm32f103c6_uart.h"
+#include "target/target.h"
 
 struct Target
 {
@@ -52,6 +54,8 @@ TargetHandle targetInitialize()
 	initializeBss();
 	initializeData();
 	clockInitialize();
+	stm32f103c6DmaUp();
+	stm32f103c6AdcUp();
 
 	return (TargetHandle)&sTarget;
 }

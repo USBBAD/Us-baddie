@@ -16,6 +16,11 @@ static uint8_t sDma1Channel1Buffer[USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES] = {0};
 
 static void configureAudio();
 
+void dma1Channel1Isr()
+{
+	// TODO
+}
+
 /// \brief 2 audio channels are processed by DMA 1 which is wired to DMA
 /// channel
 ///
@@ -43,7 +48,7 @@ static void configureAudio()
 	// Enable circular mode
 	dmaChannel->CCR |= DMA_CCR_CIRC;
 
-	// Set the number of transfers: 2, 16 bit per each audio channels
+	// Set the number of transfers: 2, 16 bit per each audio channel
 	dmaChannel->CNDTR = 2;
 
 	// Set peripheral address: DMA1
@@ -55,7 +60,9 @@ static void configureAudio()
 	dmaChannel->CMAR = (uintptr_t)sDma1Channel1Buffer;
 
 	// Enable channel
-	dmaChannel->CCR |= DMA_CCR_EN;
+	dmaChannel->CCR |= DMA_CCR_EN
+		// Enable inerrupt on "Transfer complete" event
+		| DMA_CCR_TCIE;
 }
 
 void stm32f103c6DmaUp()

@@ -71,6 +71,7 @@ static void configureAudio()
 
 void stm32f103c6DmaUp()
 {
+	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 	configureAudio();
 }
 

@@ -13,12 +13,16 @@
 #define USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES (16 * 2)
 
 static uint8_t sDma1Channel1Buffer[USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES] = {0};
-
 static void configureAudio();
+static void (*sDma1Channel1IsrHook)();
 
 void dma1Channel1Isr()
 {
-	// TODO
+	// TODO: clear ISR (check if it is needed at all)
+	// TODO: restart DMA (if not in circular mode)
+	if (sDma1Channel1IsrHook) {
+		sDma1Channel1IsrHook();
+	}
 }
 
 /// \brief 2 audio channels are processed by DMA 1 which is wired to DMA
@@ -68,4 +72,15 @@ static void configureAudio()
 void stm32f103c6DmaUp()
 {
 	configureAudio();
+}
+
+void *dmaGetBuffer(int aDma, int aDmaChannel)
+{
+	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
+	switch (aDma << 8 & aDmaChannel) {
+		case (1 << 8) & 1:
+			return sDma1Channel1Buffer;
+	}
+
+	return 0;
 }

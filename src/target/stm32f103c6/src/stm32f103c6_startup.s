@@ -64,7 +64,7 @@ gStm32VectorTable:
 	.word EXTI2_TS_IRQHandler
 	.word EXTI3_IRQHandler
 	.word EXTI4_IRQHandler
-	.word DMA1_Channel1_IRQHandler
+	.word dma1Channel1Isr
 	.word DMA1_Channel2_IRQHandler
 	.word DMA1_Channel3_IRQHandler
 	.word DMA1_Channel4_IRQHandler

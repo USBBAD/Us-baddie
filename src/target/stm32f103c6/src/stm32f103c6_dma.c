@@ -55,7 +55,7 @@ static void configureAudio()
 	// Set the number of transfers: 2, 16 bit per each audio channel
 	dmaChannel->CNDTR = 2;
 
-	// Set peripheral address: DMA1
+	// Set peripheral address: ADC1
 	// TODO XXX: 16 bits, data alignment
 	dmaChannel->CPAR = (uintptr_t)(&(ADC1->DR));
 

@@ -23,9 +23,6 @@ void stm32f103c6AdcUp()
 	// Enable continuous mode (re-enable conversion after it is finished)
 	adc->CR2 |= ADC_CR2_CONT;
 
-	// Enable conversion
-//	adc->CR2 |= ADC_CR2_ADON; // TODO: should it be enabled later?
-
 	// Configure conversion sequence
 
 	// 2 conversions
@@ -36,4 +33,9 @@ void stm32f103c6AdcUp()
 
 	// Use ADC12_IN2 (PA2) as second conversion
 	adc->SQR3 |= 2 << 5;
+
+	// Enable conversion
+	adc->CR2 |= ADC_CR2_ADON
+		// Start conversion
+		| ADC_CR2_SWSTART;
 }

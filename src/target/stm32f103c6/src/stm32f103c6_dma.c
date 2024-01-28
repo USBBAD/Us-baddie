@@ -37,6 +37,18 @@ void dma1Channel1Isr()
 static void configureAudio()
 {
 	volatile DMA_Channel_TypeDef *dmaChannel = DMA1_Channel1;
+
+	// Set peripheral address: ADC1
+	// TODO XXX: 16 bits, data alignment
+	dmaChannel->CPAR = (uintptr_t)(&(ADC1->DR));
+
+	// Set memory address (audio buffer stored values)
+	// TODO XXX: check for possible memory alignment issues
+	dmaChannel->CMAR = (uintptr_t)sDma1Channel1Buffer;
+
+	// Set the number of transfers: 2, 16 bit per each audio channel
+	dmaChannel->CNDTR = 2;
+
 	// set max priority
 	dmaChannel->CCR |= DMA_CCR_PL_0 | DMA_CCR_PL_1;
 
@@ -51,17 +63,6 @@ static void configureAudio()
 
 	// Enable circular mode
 	dmaChannel->CCR |= DMA_CCR_CIRC;
-
-	// Set the number of transfers: 2, 16 bit per each audio channel
-	dmaChannel->CNDTR = 2;
-
-	// Set peripheral address: ADC1
-	// TODO XXX: 16 bits, data alignment
-	dmaChannel->CPAR = (uintptr_t)(&(ADC1->DR));
-
-	// Set memory address (audio buffer stored values)
-	// TODO XXX: check for possible memory alignment issues
-	dmaChannel->CMAR = (uintptr_t)sDma1Channel1Buffer;
 
 	// Enable channel
 	dmaChannel->CCR |= DMA_CCR_EN

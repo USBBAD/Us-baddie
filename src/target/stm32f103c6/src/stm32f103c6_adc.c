@@ -35,7 +35,8 @@ void stm32f103c6AdcUp()
 	adc->SQR3 |= 2 << 5;
 
 	// Enable conversion
-	adc->CR2 |= ADC_CR2_ADON
-		// Start conversion
-		| ADC_CR2_SWSTART;
+	adc->CR2 |= ADC_CR2_ADON;
+
+	// Start conversion
+	adc->CR2 |= ADC_CR2_SWSTART;
 }

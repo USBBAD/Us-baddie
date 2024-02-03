@@ -50,7 +50,7 @@ static void configureAudio()
 	dmaChannel->CNDTR = 2;
 
 	// set max priority
-	dmaChannel->CCR |= DMA_CCR_PL_0 | DMA_CCR_PL_1;
+	dmaChannel->CCR |= DMA_CCR_PL;
 
 	// Set 16 bit memory size
 	dmaChannel->CCR |= DMA_CCR_MSIZE_0;
@@ -64,15 +64,19 @@ static void configureAudio()
 	// Enable circular mode
 	dmaChannel->CCR |= DMA_CCR_CIRC;
 
+	// Enable inerrupt on "Transfer complete" event
+	dmaChannel->CCR |= DMA_CCR_TCIE
+		// Enable interrupt on "Transfer error"
+		| DMA_CCR_TEIE;
+
 	// Enable channel
-	dmaChannel->CCR |= DMA_CCR_EN
-		// Enable inerrupt on "Transfer complete" event
-		| DMA_CCR_TCIE;
+	dmaChannel->CCR |= DMA_CCR_EN;
 }
 
 void stm32f103c6DmaUp()
 {
 	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+	NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
 	configureAudio();
 }
 

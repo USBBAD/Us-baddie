@@ -71,7 +71,7 @@ gStm32VectorTable:
 	.word DMA1_Channel5_IRQHandler
 	.word DMA1_Channel6_IRQHandler
 	.word DMA1_Channel7_IRQHandler
-	.word ADC1_2_IRQHandler
+	.word adc12Isr
 	.word USB_HP_CAN1_TX_IRQHandler
 	.word USB_LP_CAN1_RX0_IRQHandler
 	.word CAN1_RX1_IRQHandler

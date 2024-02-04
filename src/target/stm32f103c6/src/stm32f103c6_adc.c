@@ -15,10 +15,11 @@ void adc12Isr()
 
 void stm32f103c6AdcUp()
 {
+	NVIC_EnableIRQ(ADC1_2_IRQn);
 	volatile ADC_TypeDef *adc = ADC1;
 
 	// Enable EOC (end of conversion) interrupt
-	adc->CR1 |= ADC_CR1_EOCIE;
+//	adc->CR1 |= ADC_CR1_EOCIE;
 
 	// Enable SCAN mode (scan each of the enabled channels, one by one)
 	adc->CR1 |= ADC_CR1_SCAN;
@@ -40,8 +41,16 @@ void stm32f103c6AdcUp()
 	// Use ADC12_IN2 (PA2) as second conversion
 	adc->SQR3 |= 2 << 5;
 
-	// Enable conversion
+	// Start conversion
+	adc->CR2 |= ADC_CR2_SWSTART;
+
+	// Enable ADC
 	adc->CR2 |= ADC_CR2_ADON;
+
+	// Calibrate ADC
+	adc->CR2 |= ADC_CR2_CAL;
+
+	while (adc->CR2 & ADC_CR2_CAL);
 
 	// Start conversion
 	adc->CR2 |= ADC_CR2_SWSTART;

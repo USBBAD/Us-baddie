@@ -7,6 +7,12 @@
 
 #include <stm32f103x6.h>
 
+void adc12Isr()
+{
+	while (1) {
+	}
+}
+
 void stm32f103c6AdcUp()
 {
 	volatile ADC_TypeDef *adc = ADC1;

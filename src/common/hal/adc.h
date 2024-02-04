@@ -8,6 +8,6 @@
 #ifndef USBAD_COMMON_HAL_ADC_H_
 #define USBAD_COMMON_HAL_ADC_H_
 
-typedef void *AdcHandle;
+void adcStart();
 
 #endif  // USBAD_COMMON_HAL_ADC_H_

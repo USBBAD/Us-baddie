@@ -53,5 +53,12 @@ void stm32f103c6AdcUp()
 	while (adc->CR2 & ADC_CR2_CAL);
 
 	// Start conversion
-	adc->CR2 |= ADC_CR2_SWSTART;
+//	adc->CR2 |= ADC_CR2_ADON;
+}
+
+void adcStart()
+{
+	// Start conversion
+	volatile ADC_TypeDef *adc = ADC1;
+	adc->CR2 |= ADC_CR2_ADON;
 }

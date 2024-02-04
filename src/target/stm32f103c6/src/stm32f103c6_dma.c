@@ -14,7 +14,21 @@
 
 static uint8_t sDma1Channel1Buffer[USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES] = {0};
 static void configureAudio();
+typedef void (*DmaHookCallback)();
 static void (*sDma1Channel1IsrHook)();
+
+void dmaSetIsrHook(int aDma, int aChannel, DmaHookCallback aCallback)
+{
+	switch (aDma << 8 & aChannel) {
+		case (1 << 8 ) & 1:
+			sDma1Channel1IsrHook = aCallback;
+
+			break;
+
+		default:
+			break;
+	}
+}
 
 void dma1Channel1Isr()
 {
@@ -80,7 +94,7 @@ void stm32f103c6DmaUp()
 	configureAudio();
 }
 
-void *dmaGetBuffer(int aDma, int aDmaChannel)
+void *dmaGetBufferIsr(int aDma, int aDmaChannel)
 {
 	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
 	switch (aDma << 8 & aDmaChannel) {

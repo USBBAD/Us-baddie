@@ -13,6 +13,6 @@
 /// \returns 0, if the appropriate DMA hasn't been initialized
 void *dmaGetBufferIsr(int aDma, int aDmaChannel);
 
-void *dmaSetIsrHook(void (*aDmaHook)());
+void *dmaSetIsrHook(int aDma, int aDmaChannel, void (*aDmaHook)());
 
 #endif // COMMON_HAL_DMA_H_

@@ -5,3 +5,4 @@ build/
 ProjectConfiguration.make
 *.user
 *.lck
+.commitmsg

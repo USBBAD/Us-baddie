@@ -13,6 +13,8 @@
 void onAdcIsr()
 {
 	volatile uint16_t *buffer = dmaGetBufferIsr(1, 1);
+	volatile uint16_t ch2 = buffer[1];
+	volatile uint16_t ch1 = buffer[0];
 }
 
 int main(void)

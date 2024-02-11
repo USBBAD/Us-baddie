@@ -12,7 +12,7 @@
 /// \def Buffer size for converted audio
 #define USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES (16 * 2)
 
-static uint8_t sDma1Channel1Buffer[USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES] = {0};
+static uint16_t sDma1Channel1Buffer[2] = {0};
 static void configureAudio();
 typedef void (*DmaHookCallback)();
 static void (*sDma1Channel1IsrHook)();

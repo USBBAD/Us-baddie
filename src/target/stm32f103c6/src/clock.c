@@ -39,6 +39,9 @@ void clockInitialize()
 #if USE_HSI_AS_SYSTEM_CLOCK
 	// Use HSI as the SYSCLK source
 	rcc->CFGR |= RCC_CFGR_SW_HSI;
+
+	// Multiply PLL by 6 to provide a sufficient clock for USB
+	rcc->CFGR |= (0b0100 << 18);
 #endif
 
 	// Enable SRAM

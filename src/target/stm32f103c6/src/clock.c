@@ -9,24 +9,6 @@
 #include <stm32f103x6.h>
 #include <stdint.h>
 
-/// Whether HSI should be used as the clock source
-#define USE_HSI_AS_CLOCK_SOURCE (1)
-
-#ifndef USE_HSI_AS_CLOCK_SOURCE
-#error "HSI should be used as the clock source"
-#endif  /* USE_HSI_AS_CLOCK_SOURCE */
-
-/// Internal clock source frequency
-#define HSI_OUTPUT_FREQUENCY (8000000U)
-
-#define USE_HSI_AS_SYSTEM_CLOCK (1)
-
-#if USE_HSI_AS_SYSTEM_CLOCK
-#define SYSCLK_OUTPUT_FREQUENCY (HSI_OUTPUT_FREQUENCY)
-#else
-#error "Unhandled clock configuration"
-#endif
-
 void clockInitialize()
 {
 	volatile RCC_TypeDef *rcc = RCC;
@@ -36,13 +18,11 @@ void clockInitialize()
 	// Wait until HSI is ready
 	while (!(rcc->CR & RCC_CR_HSIRDY));
 
-#if USE_HSI_AS_SYSTEM_CLOCK
 	// Use HSI as the SYSCLK source
-	rcc->CFGR |= RCC_CFGR_SW_HSI;
+	rcc->CFGR |= RCC_CFGR_SW_PLL;
 
 	// Multiply PLL by 6 to provide a sufficient clock for USB
 	rcc->CFGR |= (0b0100 << 18);
-#endif
 
 	// Enable SRAM
 	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
@@ -61,9 +41,7 @@ void clockInitialize()
 
 uint32_t clockGetSysclkFrequency()
 {
-#ifdef USE_HSI_AS_SYSTEM_CLOCK
-	return HSI_OUTPUT_FREQUENCY;
-#endif
+	return 48000000;
 }
 
 uint32_t clockGetApb2Prescaler()

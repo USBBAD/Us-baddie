@@ -9,6 +9,7 @@
 #include <stm32f103x6.h>
 #include <stdint.h>
 
+/// \brief 48 MHz at SYSCLK, HSI as system clock, USB-compatible
 void clockInitialize()
 {
 	volatile RCC_TypeDef *rcc = RCC;

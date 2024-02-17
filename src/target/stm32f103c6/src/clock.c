@@ -21,8 +21,8 @@ void clockInitialize()
 	// Use HSI as the SYSCLK source
 	rcc->CFGR |= RCC_CFGR_SW_PLL;
 
-	// Multiply PLL by 6 to provide a sufficient clock for USB
-	rcc->CFGR |= (0b0100 << 18);
+	// PLLMUL Multiply PLL by 12 to provide a sufficient clock for USB
+	rcc->CFGR |= (0b1010 << 18);
 
 	// Enable SRAM
 	rcc->AHBENR |= RCC_AHBENR_SRAMEN;

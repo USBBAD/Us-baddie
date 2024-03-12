@@ -22,6 +22,10 @@
 
 #define USBAD_USB_BUFFER_SIZE (64)
 
+#define USB_EPXR_STAT_RX_VALID (0b11)
+
+#define USB_EPXR_EP_TYPE_CONTROL (0b11)
+
 /// \brief Memory layout for single buffer configuration
 /// \details Memory mapping from APB to packet buffer memory is sparse,
 /// because USB uses 16-bit words. Thus, 4 byte increment in MCU memory
@@ -42,19 +46,21 @@ static inline volatile UsbMemoryMap *getUsbMemoryMap()
 	return (volatile UsbMemoryMap *)(&USB->BTABLE);
 }
 
-// TODO
+/// \details Handles high priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_HP_CAN1_TX_IRQHandler()
 {
+// TODO
 }
 
-// TODO
+/// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
+// TODO
 }
 
-// TODO
 void USBWakeUp_IRQHandler()
 {
+// TODO
 }
 
 static void enableClock()
@@ -75,11 +81,15 @@ static void enableNvicInterrupts()
 /// has endpoint 0 being active
 void initializeControlEndpoint(volatile USB_TypeDef *aUsb)
 {
+	aUsb->EP0R = 0;
+}
+
+void initializeEndpoints(volatile USB_TypeDef *aUsb)
+{
+	// Usb enumeration is yet to happen: set USB device address
 	aUsb->DADDR = 0;
 
-
-	//  Enable transaction handling
-	aUsb->DADDR |= USB_DADDR_EF;
+	initializeControlEndpoint(aUsb);
 }
 
 static void initializeBufferDescriptionTable(volatile USB_TypeDef *aUsb)
@@ -111,6 +121,11 @@ static void onResetInterrupt()
 	// triggered the interrupt."
 }
 
+static void enableUsbDevice(volatile USB_TypeDef *aUsb)
+{
+	aUsb->DADDR |= USB_DADDR_EF;
+}
+
 void usbInitialize()
 {
 	volatile USB_TypeDef *usb = USB;
@@ -136,11 +151,13 @@ void usbInitialize()
 	// TODO configure other registers
 	// TODO unmask USB events to enable interrupts
 
-	initializeControlEndpoint(usb);
+	initializeEndpoints(usb);
 
 	initializeBufferDescriptionTable(usb);
 
 	enableUsbInterrupts(usb);
+
+	enableUsbDevice(usb);
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

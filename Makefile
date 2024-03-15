@@ -1,5 +1,5 @@
 # Output ELF file path
-BUILD_ELF_PATH = build/usbad
+BUILD_ELF_PATH = build/src/common/application
 
 # Binary image (firmware) path
 OUTPUT_BINARY_IMAGE_PATH = build/firmware.bin

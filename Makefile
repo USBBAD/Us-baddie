@@ -3,6 +3,7 @@ BUILD_ELF_PATH = build/src/common/application
 
 # Binary image (firmware) path
 OUTPUT_BINARY_IMAGE_PATH = build/firmware.bin
+OUTPUT_HEX_IMAGE_PATH = build/firmware.hex
 
 # GCC toolchain software
 OBJDUMP = arm-none-eabi-objdump
@@ -39,5 +40,6 @@ disassemble_all:
 image:
 	@echo Prepare image for uploading onto target
 	$(OBJCOPY) -O binary $(BUILD_ELF_PATH) $(OUTPUT_BINARY_IMAGE_PATH)
+	$(OBJCOPY) -O ihex $(BUILD_ELF_PATH) $(OUTPUT_HEX_IMAGE_PATH)
 
 .PHONY: build_release build_debug

@@ -12,6 +12,8 @@
 static void clockInitializeHse72Mhz();
 static void clockInitializeHsi48Mhz();
 
+static uint64_t sSysclk;
+
 // \details Necessary to get USB operating (stm32f103x6 datasheet, DocID15060
 // Rev 7)
 // RCC APB1 frequency = 72000000;
@@ -57,6 +59,8 @@ static void clockInitializeHse72Mhz()
 
 	// Use PLL as the SYSCLK source (8 MHz external oscillator)
 	rcc->CFGR |= RCC_CFGR_SW_PLL;
+
+	sSysclk = 72000000;
 }
 
 /// \brief 48 MHz at SYSCLK, HSI as system clock, USB-compatible
@@ -88,6 +92,7 @@ static void clockInitializeHsi48Mhz()
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
 
 	uartUp();
+	sSysclk = 48000000;
 }
 
 void clockInitialize()

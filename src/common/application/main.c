@@ -10,7 +10,7 @@
 #include "hal/uart.h"
 #include "target/target.h"
 
-void onAdcIsr()
+void onAdcDmaIsr()
 {
 	volatile uint16_t *buffer = dmaGetBufferIsr(1, 1);
 	volatile uint16_t ch2 = buffer[1];
@@ -21,7 +21,7 @@ int main(void)
 {
 	targetInitialize();
 	uartConfigure(1, 115200);
-	dmaSetIsrHook(1, 1, onAdcIsr);
+	dmaSetIsrHook(1, 1, onAdcDmaIsr);
 	adcStart();
 
 	while (1) {

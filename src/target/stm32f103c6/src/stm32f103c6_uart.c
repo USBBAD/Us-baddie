@@ -140,7 +140,7 @@ static void configureGpio()
 
 static uint32_t getUsart1InputClockFrequency()
 {
-	return clockGetSysclkFrequency() / clockGetApb2Prescaler();
+	return clockGetSysclkFrequency() / clockGetApb2Prescaler() / clockGetAhbPrescaler();
 }
 
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency)

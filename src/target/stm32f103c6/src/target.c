@@ -56,6 +56,7 @@ TargetHandle targetInitialize()
 	clockInitialize();
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
+	uartUp();
 
 	return (TargetHandle)&sTarget;
 }

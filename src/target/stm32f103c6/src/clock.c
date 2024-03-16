@@ -102,7 +102,7 @@ void clockInitialize()
 
 uint32_t clockGetSysclkFrequency()
 {
-	return 48000000;
+	return sSysclk;
 }
 
 uint32_t clockGetApb2Prescaler()

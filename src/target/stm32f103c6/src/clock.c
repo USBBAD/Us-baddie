@@ -91,13 +91,41 @@ static void clockInitializeHsi48Mhz()
 	// Enable USB
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
 
-	uartUp();
 	sSysclk = 48000000;
+}
+
+void clockInitializeHsi8Mhz()
+{
+	volatile RCC_TypeDef *rcc = RCC;
+	// Enable Internal 8 MHz HSI clock source
+	rcc->CR |= RCC_CR_HSION;
+
+	// Wait until HSI is ready
+	while (!(rcc->CR & RCC_CR_HSIRDY));
+
+#if USE_HSI_AS_SYSTEM_CLOCK
+	// Use HSI as the SYSCLK source
+	rcc->CFGR |= RCC_CFGR_SW_HSI;
+#endif
+
+	// Enable SRAM
+	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
+
+	// Enable DMA
+	rcc->AHBENR |= RCC_AHBENR_DMA1EN;
+
+	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
+	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
+
+	// Enable USB
+	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
+
+	sSysclk = 8000000;
 }
 
 void clockInitialize()
 {
-	clockInitializeHse72Mhz();
+	clockInitializeHsi8Mhz();
 }
 
 uint32_t clockGetSysclkFrequency()

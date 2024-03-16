@@ -9,8 +9,6 @@
 
 void adc12Isr()
 {
-	while (1) {
-	}
 }
 
 void stm32f103c6AdcUp()

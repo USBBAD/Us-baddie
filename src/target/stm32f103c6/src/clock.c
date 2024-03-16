@@ -13,6 +13,9 @@ static void clockInitializeHse72Mhz();
 static void clockInitializeHsi48Mhz();
 
 static uint64_t sSysclk;
+static uint64_t sApb1Pre = 1;
+static uint64_t sApb2Pre = 1;
+static uint64_t sAhbPre = 1;
 
 // \details Necessary to get USB operating (stm32f103x6 datasheet, DocID15060
 // Rev 7)
@@ -133,7 +136,17 @@ uint32_t clockGetSysclkFrequency()
 	return sSysclk;
 }
 
+uint32_t clockGetAhbPrescaler()
+{
+	return sAhbPre;
+}
+
+uint32_t clockGetApb1Prescaler()
+{
+	return sApb1Pre;
+}
+
 uint32_t clockGetApb2Prescaler()
 {
-	return 1U;
+	return sApb2Pre;
 }

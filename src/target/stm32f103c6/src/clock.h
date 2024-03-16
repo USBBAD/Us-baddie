@@ -20,4 +20,10 @@ uint32_t clockGetSysclkFrequency();
 /// \brief Returns APB2's prescaler value
 uint32_t clockGetApb2Prescaler();
 
+/// \brief Returns APB2's prescaler value
+uint32_t clockGetApb1Prescaler();
+
+/// \brief Returns APB2's prescaler value
+uint32_t clockGetAhbPrescaler();
+
 #endif // TARGET_STM32F103C6_SRC_CLOCK_HPP_

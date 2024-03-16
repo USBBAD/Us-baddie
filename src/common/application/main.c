@@ -21,10 +21,8 @@ int main(void)
 {
 	targetInitialize();
 	uartConfigure(1, 115200);
-	dmaSetIsrHook(1, 1, onAdcDmaIsr);
-	adcStart();
 
 	while (1) {
-//		uartTryPuts(1, "Hello, world!");
+		uartTryPuts(1, "Hello, world!");
 	}
 }

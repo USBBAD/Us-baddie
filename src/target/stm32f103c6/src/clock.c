@@ -165,8 +165,6 @@ void clockInitialize()
 	enableAdc1Clock();
 	enableUsbClock();
 	enableUsart1Clock();
-
-	// TODO: bring UART clock upping f-n here
 }
 
 uint32_t clockGetSysclkFrequency()

@@ -90,7 +90,7 @@ static void clockInitializeHsi48Mhz()
 	rcc->CFGR |= RCC_CFGR_SW_PLL;
 
 	// PLLMUL Multiply PLL by 12 to provide a sufficient clock for USB
-	rcc->CFGR |= (0b1010 << 18);
+	rcc->CFGR |= RCC_CFGR_PLLMULL12;
 
 	// Enable DMA
 	rcc->AHBENR |= RCC_AHBENR_DMA1EN;

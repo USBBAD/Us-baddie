@@ -11,6 +11,10 @@
 
 static void clockInitializeHse72Mhz();
 static void clockInitializeHsi48Mhz();
+static void enableAdc1Clock();
+static void enableUsbClock();
+static void enableGpioAClock();
+static void enableDma1Clock();
 
 static uint64_t sSysclk;
 static uint64_t sApb1Pre = 1;
@@ -61,9 +65,6 @@ static void clockInitializeHse72Mhz()
 	// Enable SRAM
 	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
 
-	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
-	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
-
 	// Enable PLL
 	rcc->CR |= RCC_CR_PLLON;
 
@@ -92,16 +93,39 @@ static void clockInitializeHsi48Mhz()
 	// PLLMUL Multiply PLL by 12 to provide a sufficient clock for USB
 	rcc->CFGR |= RCC_CFGR_PLLMULL12;
 
+	sSysclk = 48000000;
+}
+
+static inline void enableDma1Clock()
+{
+	volatile RCC_TypeDef *rcc = RCC;
+
 	// Enable DMA
 	rcc->AHBENR |= RCC_AHBENR_DMA1EN;
+}
 
-	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
-	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
+static inline void enableGpioAClock()
+{
+	volatile RCC_TypeDef *rcc = RCC;
 
-	// Enable USB
+	// Enable DMA
+	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN;
+}
+
+static inline void enableAdc1Clock()
+{
+	volatile RCC_TypeDef *rcc = RCC;
+
+	// Enable DMA
+	rcc->APB2ENR |=  RCC_APB2ENR_ADC1EN;
+}
+
+static inline void enableUsbClock()
+{
+	volatile RCC_TypeDef *rcc = RCC;
+
+	// Enable DMA
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
-
-	sSysclk = 48000000;
 }
 
 void clockInitializeHsi8Mhz()
@@ -118,21 +142,21 @@ void clockInitializeHsi8Mhz()
 	rcc->CFGR |= RCC_CFGR_SW_HSI;
 #endif
 
-	// Enable DMA
-	rcc->AHBENR |= RCC_AHBENR_DMA1EN;
-
-	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
-	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
-
-	// Enable USB
-	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
-
 	sSysclk = 8000000;
 }
 
 void clockInitialize()
 {
+	// Initialize SYSCLK to 72 MHz
 	clockInitializeHse72Mhz();
+
+	// Enable peripherals' clock
+	enableDma1Clock();
+	enableGpioAClock();
+	enableAdc1Clock();
+	enableUsbClock();
+
+	// TODO: bring UART clock upping f-n here
 }
 
 uint32_t clockGetSysclkFrequency()

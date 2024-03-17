@@ -9,6 +9,8 @@
 
 #include "clock.h"
 #include <stm32f103x6.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #define USBAD_STM32F103C6_USARTDIV_COEFFICIENT (16.0f)
@@ -42,10 +44,8 @@ static int txInit(struct Tx *aTx, const char *aBuffer, size_t aBufferSize)
 	};
 }
 
-static int txPutString(struct Tx *aTx, const char *aBuffer)
+static int txPutStringLen(struct Tx *aTx, const char *aBuffer, size_t bufferLen)
 {
-	size_t bufferLen = strlen(aBuffer);
-
 	if (bufferLen > aTx->size) {
 		return 0;
 	}
@@ -55,6 +55,12 @@ static int txPutString(struct Tx *aTx, const char *aBuffer)
 	aTx->itEnd = aTx->it + bufferLen;
 
 	return 1;
+}
+
+static int txPutString(struct Tx *aTx, const char *aBuffer)
+{
+	size_t bufferLength = strlen(aBuffer);
+	txPutStringLen(aTx, aBuffer, bufferLength);
 }
 
 static const uint8_t *txTryPop(struct Tx *aTx)
@@ -210,7 +216,7 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)
 	enableAllUsartIsrs();
 }
 
-int uartTryPuts(uint8_t aUartNumber, const char *aString)
+int uartTryPutsLen(uint8_t aUartNumber, const char *aString, size_t aBufferLength)
 {
 	int interruptNumber = 0;
 	void *txBuffer = 0;
@@ -237,7 +243,7 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 
 	if (txIsTransmitting(tx)) {
 		result = 0;
-	} else if (!txPutString(tx, aString)) {
+	} else if (!txPutStringLen(tx, aString, aBufferLength)) {
 		result = 0;
 	}
 
@@ -245,4 +251,11 @@ int uartTryPuts(uint8_t aUartNumber, const char *aString)
 	usartSetTransmissionEnabled(usart, 1);
 
 	return result;
+}
+
+int uartTryPuts(uint8_t aUartNumber, const char *aOutput)
+{
+	size_t bufferLen = strlen(aOutput);
+
+	return uartTryPutsLen(aUartNumber, aOutput, bufferLen);
 }

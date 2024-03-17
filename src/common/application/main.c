@@ -33,10 +33,8 @@ int main(void)
 	targetInitialize();
 	uartConfigure(1, 115200);
 	usvprintfSetPuts(uartPuts);
-//	cbprintf(uartPuts, "Once Again %s %d\n", "yo", 20);
-	usvprintf("Once Again %s %d\n\r", "yo", 10);
 
-	while (1) {
-//		uartTryPuts(1, "Hello, world!\n");
+	for (size_t i = 0;; ++i) {
+		usvprintf("What's up, %s? %u\n\r", "world", i);
 	}
 }

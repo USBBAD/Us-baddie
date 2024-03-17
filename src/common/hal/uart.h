@@ -5,6 +5,7 @@
 //     Author: Dmitry Murashov (d <DOT> murashov <AT> geoscan <DOT> aero)
 //
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifndef COMMON_HAL_UART_H_
@@ -17,5 +18,7 @@ int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate);
 /// \brief Prints a string into UART output
 /// \returns >0, if successful, <= otherwise
 int uartTryPuts(uint8_t aUartNumber, const char *aOutput);
+
+int uartTryPutsLen(uint8_t aUartNumber, const char *aOutput, size_t aOutputLen);
 
 #endif // COMMON_HAL_UART_H_

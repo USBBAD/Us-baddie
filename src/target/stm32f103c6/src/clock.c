@@ -11,6 +11,7 @@
 
 static void clockInitializeHse72Mhz();
 static void clockInitializeHsi48Mhz();
+static void clockInitializeHsi8Mhz();
 static void enableAdc1Clock();
 static void enableUsbClock();
 static void enableGpioAClock();

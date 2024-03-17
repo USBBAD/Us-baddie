@@ -16,6 +16,7 @@ static void enableAdc1Clock();
 static void enableUsbClock();
 static void enableGpioAClock();
 static void enableDma1Clock();
+static void enableUsart1Clock();
 
 static uint64_t sSysclk;
 static uint64_t sApb1Pre = 1;
@@ -129,6 +130,13 @@ static inline void enableUsbClock()
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
 }
 
+static void enableUsart1Clock()
+{
+	volatile RCC_TypeDef *rcc = RCC;
+
+	rcc->APB2ENR |= RCC_APB2ENR_USART1EN;
+}
+
 void clockInitializeHsi8Mhz()
 {
 	volatile RCC_TypeDef *rcc = RCC;
@@ -156,6 +164,7 @@ void clockInitialize()
 	enableGpioAClock();
 	enableAdc1Clock();
 	enableUsbClock();
+	enableUsart1Clock();
 
 	// TODO: bring UART clock upping f-n here
 }

@@ -80,7 +80,6 @@ static struct Tx sUart1Tx;
 // TODO: USARTs' ISRs
 
 /// \brief Initializes RCC registers
-static void configureClock();
 
 static void configureGpio();
 
@@ -112,13 +111,6 @@ void usart1Isr()
 			usartSetTxInterruptsEnabled(usart, 0);
 		}
 	}
-}
-
-static void configureClock()
-{
-	volatile RCC_TypeDef *rcc = RCC;
-
-	rcc->APB2ENR |= RCC_APB2ENR_USART1EN;
 }
 
 static void configureGpio()
@@ -182,7 +174,6 @@ static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsE
 
 void uartUp()
 {
-	configureClock();
 	configureGpio();
 }
 

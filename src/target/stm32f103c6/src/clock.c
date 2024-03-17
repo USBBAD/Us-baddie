@@ -33,6 +33,10 @@ static void clockInitializeHse72Mhz()
 
 	// APB 1, 36 MHz max, should not exceed, div. SYSCLK
 	rcc->CFGR |= RCC_CFGR_PPRE1_DIV2;
+	sApb1Pre = 2;
+
+	rcc->CFGR |= RCC_CFGR_PPRE2_DIV8;
+	sApb2Pre = 8;
 
 	// Enable 1.5 prescaler to get 48MHz on USB bus
 	rcc->CFGR &= ~RCC_CFGR_USBPRE;
@@ -53,6 +57,12 @@ static void clockInitializeHse72Mhz()
 
 	// Select external as PLL clock source
 	rcc->CFGR |= RCC_CFGR_PLLSRC;
+
+	// Enable SRAM
+	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
+
+	// Enable USART 1, IO A, ADC 1, ADC 2 (TODO: do we need the second one?)
+	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_ADC1EN;
 
 	// Enable PLL
 	rcc->CR |= RCC_CR_PLLON;
@@ -82,9 +92,6 @@ static void clockInitializeHsi48Mhz()
 	// PLLMUL Multiply PLL by 12 to provide a sufficient clock for USB
 	rcc->CFGR |= (0b1010 << 18);
 
-	// Enable SRAM
-	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
-
 	// Enable DMA
 	rcc->AHBENR |= RCC_AHBENR_DMA1EN;
 
@@ -111,9 +118,6 @@ void clockInitializeHsi8Mhz()
 	rcc->CFGR |= RCC_CFGR_SW_HSI;
 #endif
 
-	// Enable SRAM
-	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
-
 	// Enable DMA
 	rcc->AHBENR |= RCC_AHBENR_DMA1EN;
 
@@ -128,7 +132,7 @@ void clockInitializeHsi8Mhz()
 
 void clockInitialize()
 {
-	clockInitializeHsi8Mhz();
+	clockInitializeHse72Mhz();
 }
 
 uint32_t clockGetSysclkFrequency()

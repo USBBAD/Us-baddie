@@ -9,5 +9,6 @@
 #define USBAD_COMMON_HAL_ADC_H_
 
 void adcStart();
+void adcStopIsr();
 
 #endif  // USBAD_COMMON_HAL_ADC_H_

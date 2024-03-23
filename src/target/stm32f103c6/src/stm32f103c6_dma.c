@@ -32,11 +32,16 @@ void dmaSetIsrHook(int aDma, int aChannel, DmaHookCallback aCallback)
 
 void dma1Channel1Isr()
 {
+	volatile DMA_TypeDef *dma = DMA1;
+
 	// TODO: clear ISR (check if it is needed at all)
 	// TODO: restart DMA (if not in circular mode)
-	if (sDma1Channel1IsrHook) {
+	if (sDma1Channel1IsrHook && (dma->ISR & DMA_ISR_TCIF1)) {
 		sDma1Channel1IsrHook();
 	}
+
+	// clear DMA interrupts for channel 1
+	dma->IFCR = DMA_IFCR_CGIF1;
 }
 
 /// \brief 2 audio channels are processed by DMA 1 which is wired to DMA

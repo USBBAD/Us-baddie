@@ -58,5 +58,16 @@ void adcStart()
 {
 	// Start conversion
 	volatile ADC_TypeDef *adc = ADC1;
+	volatile DMA_Channel_TypeDef *dmaChannel = DMA1_Channel1;
 	adc->CR2 |= ADC_CR2_ADON;
+	dmaChannel->CCR |= DMA_CCR_EN;
+}
+
+void adcStopIsr()
+{
+	// Start conversion
+	volatile ADC_TypeDef *adc = ADC1;
+	volatile DMA_Channel_TypeDef *dmaChannel = DMA1_Channel1;
+	adc->CR2 &= ~(ADC_CR2_ADON);
+	dmaChannel->CCR &= ~(DMA_CCR_EN);
 }

@@ -11,11 +11,14 @@
 #include "target/target.h"
 #include "utility/usvprintf.h"
 
+static uint16_t audioBuffer[2] = {0};
+
 void onAdcDmaIsr()
 {
-	volatile uint16_t *buffer = dmaGetBufferIsr(1, 1);
-	volatile uint16_t ch2 = buffer[1];
-	volatile uint16_t ch1 = buffer[0];
+	uint16_t *buffer = dmaGetBufferIsr(1, 1);
+	audioBuffer[0] = buffer[0];
+	audioBuffer[1] = buffer[1];
+//	adcStopIsr();
 }
 
 size_t uartPuts(const char *aBuffer, size_t aBufferLen)
@@ -33,8 +36,10 @@ int main(void)
 	targetInitialize();
 	uartConfigure(1, 115200);
 	usvprintfSetPuts(uartPuts);
+	dmaSetIsrHook(1, 1, onAdcDmaIsr);
+	adcStart();
 
 	for (size_t i = 0;; ++i) {
-		usvprintf("What's up, %s? %u\n\r", "world", i);
+		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
 	}
 }

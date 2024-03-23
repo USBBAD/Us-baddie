@@ -5,12 +5,14 @@
 //     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
 //
 
-#define US_DEBUG_MAX_TOKENS (4)
-#define US_DEBUG_MAX_TOKEN_SLOTS (10)
-#define US_DEBUG_FAIL_TOKEN_SLOT_ID (US_DEBUG_MAX_TOKEN_SLOTS)
+#define US_DEBUG_MAX_TOKENS (5)
+#define US_DEBUG_MAX_REGULAR_TOKEN_SLOTS (5)
+#define US_DEBUG_FAIL_TOKEN_SLOT_ID (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS)
+#define US_DEBUG_MAX_OVERALL_TOKEN_SLOTS (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS + 1)
 
 #include "utility/debug.h"
 #include "utility/usvprintf.h"
+#include "utility/fifo.h"
 #include <string.h>
 
 static size_t sCounter = 0U;
@@ -32,8 +34,9 @@ struct TokenSlot {
 };
 
 struct DebugContext {
-	struct TokenSlot tokenSlots[US_DEBUG_MAX_TOKEN_SLOTS + 1];
+	struct TokenSlot tokenSlots[US_DEBUG_MAX_OVERALL_TOKEN_SLOTS];
 	const char *context;
+	Fifo fifo;
 };
 
 static struct DebugContext sDebugContext[US_DEBUG_MAX_TOKENS] = {{
@@ -49,6 +52,9 @@ int usDebugRegisterToken(const char *aContext)
 	for (int i = 0; i < US_DEBUG_MAX_TOKENS; ++i) {
 		if (sDebugContext[i].context == 0) {
 			sDebugContext[i].context = aContext;
+			// Initialize FIFO for regular token slots (i.e. w/o error messages)
+			fifoInitialize(&sDebugContext[i].fifo, &sDebugContext[i].tokenSlots, US_DEBUG_MAX_REGULAR_TOKEN_SLOTS,
+				sizeof(struct TokenSlot));
 
 			return i;
 		}
@@ -59,27 +65,28 @@ int usDebugRegisterToken(const char *aContext)
 
 int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg)
 {
+	struct TokenSlot *slot = 0;
+	int ret = 1;
+
 	if (aToken < 0) {
 		return -1;
 	}
 
-	for (int i = 0; i < US_DEBUG_MAX_TOKEN_SLOTS + 1; ++i) {
-		if (i == US_DEBUG_FAIL_TOKEN_SLOT_ID) {
-			sDebugContext[aToken].tokenSlots[i].callable = printFailedToAddTask;
-			sDebugContext[aToken].tokenSlots[i].arg = sDebugContext[aToken].context;
-			sDebugContext[aToken].tokenSlots[i].counter = sCounter++;
+	slot = fifoPush(&sDebugContext[aToken].fifo);
+	++sCounter;
 
-			return -1;
-		} else  if (sDebugContext[aToken].tokenSlots[i].callable == 0) {
-			sDebugContext[aToken].tokenSlots[i].callable = aCallable;
-			sDebugContext[aToken].tokenSlots[i].arg = aArg;
-			sDebugContext[aToken].tokenSlots[i].counter = sCounter++;
-
-			return 1;
-		}
+	if (!slot) {
+		aCallable = printFailedToAddTask;
+		aArg = sDebugContext[aToken].context;
+		ret = -1;
+		slot = &sDebugContext[aToken].tokenSlots[US_DEBUG_FAIL_TOKEN_SLOT_ID];
 	}
 
-	return -1;
+	slot->callable = aCallable;
+	slot->arg = aArg;
+	slot->counter = sCounter;
+
+	return ret;
 }
 
 int usDebugPushMessage(int aToken, const char *aMessage)
@@ -94,7 +101,7 @@ void usDebugIterDebugLoop()
 			return;
 		}
 
-		for (int j = 0; j < US_DEBUG_MAX_TOKEN_SLOTS + 1; ++j) {
+		for (int j = 0; j < US_DEBUG_MAX_OVERALL_TOKEN_SLOTS; ++j) {
 			if (sDebugContext[i].tokenSlots[j].callable) {
 				usvprintf("%u [%s] ", sDebugContext[i].tokenSlots[j].counter, sDebugContext[i].context);
 				sDebugContext[i].tokenSlots[j].callable(sDebugContext[i].tokenSlots[j].arg);
@@ -102,5 +109,7 @@ void usDebugIterDebugLoop()
 				sDebugContext[i].tokenSlots[j].arg = 0;
 			}
 		}
+
+		fifoClear(&sDebugContext[i].fifo);
 	}
 }

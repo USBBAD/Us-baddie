@@ -9,7 +9,11 @@
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
 #include "utility/debug.h"
+#include "utility/fifo.h"
+#include "utility/usvprintf.h"
 #include <stm32f103x6.h>
+#include <stddef.h>
+#include <stdint.h>
 
 static int sDebugToken = -1;
 
@@ -44,6 +48,12 @@ typedef union {
     uint16_t buf[512]; // interspersed, 2 bytes data, 2 bytes reserved, only accessible as uint16 or uint32
 } UsbMemoryMap;
 
+struct UsbIsrContext {
+	uint16_t istr;
+} sUsbIsrContext[4] = {{0}};
+
+static Fifo sUsbIsrContextFifo;
+
 static inline volatile UsbMemoryMap *getUsbMemoryMap()
 {
 	return (volatile UsbMemoryMap *)(&USB->BTABLE);
@@ -56,10 +66,31 @@ void USB_HP_CAN1_TX_IRQHandler()
 	usDebugPushMessage(sDebugToken, "Got HP USB/CAN ISR");
 }
 
+static void dumpRegisters(const void *aIstr)
+{
+	struct UsbIsrContext *usbIsrContext = fifoPop(&sUsbIsrContextFifo);
+
+	if (usbIsrContext) {
+		usvprintf("USB ISR registers ISTR=0x%08X\r\n", usbIsrContext->istr);
+	}
+}
+
+static void enqueueDumpRegisters(uint16_t aIstr)
+{
+	struct UsbIsrContext *usbIsrContext = fifoPush(&sUsbIsrContextFifo);
+	*usbIsrContext = (struct UsbIsrContext) {
+		.istr = aIstr,
+	};
+	usDebugAddTask(sDebugToken, dumpRegisters, 0);
+}
+
 /// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 	volatile USB_TypeDef *usb = USB;
+	// Load operation will clear the register, no need to assign to 0, RM0008 Rev 21 p 639
+	volatile uint16_t istr = usb->ISTR;
+	enqueueDumpRegisters(istr);
 	usDebugPushMessage(sDebugToken, "Got LP USB/CAN ISR");
 	usb->ISTR = 0;
 }
@@ -173,6 +204,7 @@ void usbInitialize()
 	enableUsbInterrupts(usb);
 	enableUsbDevice(usb);
 	sDebugToken = usDebugRegisterToken("usb");
+	fifoInitialize(&sUsbIsrContextFifo, &sUsbIsrContext, 4, sizeof(struct UsbIsrContext));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
 }
 

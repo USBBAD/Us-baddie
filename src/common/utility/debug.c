@@ -5,9 +5,9 @@
 //     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
 //
 
-#define US_DEBUG_MAX_TOKENS (10)
-#define US_DEBUG_MAX_TOKEN_SLOTS (3)
-#define US_DEBUG_FAIL_TOKEN_SLOT_ID (3)
+#define US_DEBUG_MAX_TOKENS (4)
+#define US_DEBUG_MAX_TOKEN_SLOTS (10)
+#define US_DEBUG_FAIL_TOKEN_SLOT_ID (US_DEBUG_MAX_TOKEN_SLOTS)
 
 #include "utility/debug.h"
 #include "utility/usvprintf.h"

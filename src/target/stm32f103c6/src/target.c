@@ -50,15 +50,17 @@ static void initializeData()
 	}
 }
 
-TargetHandle targetInitialize()
+void memoryInitialize()
 {
 	initializeBss();
 	initializeData();
+}
+
+void targetInitialize()
+{
 	clockInitialize();
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();
 	usbInitialize();
-
-	return (TargetHandle)&sTarget;
 }

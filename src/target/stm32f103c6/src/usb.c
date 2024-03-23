@@ -53,16 +53,18 @@ static inline volatile UsbMemoryMap *getUsbMemoryMap()
 void USB_HP_CAN1_TX_IRQHandler()
 {
 // TODO
+	usDebugPushMessage(sDebugToken, "Got HP USB/CAN ISR");
 }
 
 /// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
-// TODO
+	usDebugPushMessage(sDebugToken, "Got LP USB/CAN ISR");
 }
 
 void USBWakeUp_IRQHandler()
 {
+	usDebugPushMessage(sDebugToken, "Got USB wakeup ISR");
 // TODO
 }
 

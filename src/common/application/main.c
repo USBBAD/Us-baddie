@@ -17,6 +17,7 @@ static int sToken = -1;
 
 void onAdcDmaIsr()
 {
+	usDebugPushMessage(sToken, "got DMA ISR");
 	uint16_t *buffer = dmaGetBufferIsr(1, 1);
 	audioBuffer[0] = buffer[0];
 	audioBuffer[1] = buffer[1];
@@ -47,14 +48,15 @@ static void printStarted(const void *aArg)
 int main(void)
 {
 	int val = 10;
+	memoryInitialize();
+	sToken = usDebugRegisterToken("application");
 	targetInitialize();
 	uartConfigure(1, 115200);
 
 	// Configure logging
 	usvprintfSetPuts(uartPuts);
 	dmaSetIsrHook(1, 1, onAdcDmaIsr);
-	adcStopIsr();
-	sToken = usDebugRegisterToken("application");
+	adcStart();
 	usDebugAddTask(sToken, printStarted, 0);
 	usDebugPushMessage(sToken, "System is up");
 

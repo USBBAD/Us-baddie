@@ -52,9 +52,15 @@ static void *fifoPush(Fifo *aFifo)
 		return 0;
 	}
 
-	--aFifo->size;
+	++aFifo->size;
 
 	return res;
+}
+
+static void fifoClear(Fifo *aFifo)
+{
+	aFifo->readPosition = 0;
+	aFifo->size = 0;
 }
 
 #endif  // SRC_COMMON_UTILITY_FIFO_H_

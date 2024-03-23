@@ -56,6 +56,7 @@ int main(void)
 	adcStopIsr();
 	sToken = usDebugRegisterToken("application");
 	usDebugAddTask(sToken, printStarted, 0);
+	usDebugPushMessage(sToken, "System is up");
 
 	while (1) {
 		usDebugIterDebugLoop();

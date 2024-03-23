@@ -8,7 +8,10 @@
 #ifndef SRC_TARGET_STM32F103C6_SRC_USB_C_
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
+#include "utility/debug.h"
 #include <stm32f103x6.h>
+
+static int sDebugToken = -1;
 
 /// \def Size of endpoint description table: 4 2-byte words for maximum 8 endpoints
 /// XXX: is it possible to use buffer table space, if not all EPs are present?
@@ -158,6 +161,8 @@ void usbInitialize()
 	enableUsbInterrupts(usb);
 
 	enableUsbDevice(usb);
+	sDebugToken = usDebugRegisterToken("usb");
+	usDebugPushMessage(sDebugToken, "Initialization completed");
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

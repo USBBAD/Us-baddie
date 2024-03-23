@@ -21,6 +21,10 @@ int usDebugRegisterToken(const char *aContext);
 /// \pre `usDebugRegisterToken` must be called before to get `aToken`
 int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg);
 
+/// \brief Pushes message w/o the need for formatting
+/// \details CR, NL symbols will be added automatically
+int usDebugPushMessage(int aToken, const char *aMessage);
+
 void usDebugIterDebugLoop();
 
 #endif  // SRC_COMMON_UTILITY_DEBUG_H_

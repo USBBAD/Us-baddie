@@ -18,6 +18,11 @@ static void printFailedToAddTask(const void *aContext)
 	usvprintf("Failed to add debug callback for \"%s\"", (const char *)aContext);
 }
 
+static void printNonFormattedMessage(const void *aMessage)
+{
+	usvprintf("%s\r\n", (const char *)aMessage);
+}
+
 struct TokenSlot {
 	UsDebugCallable callable;
 	const void *arg;
@@ -72,6 +77,11 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg)
 	}
 
 	return -1;
+}
+
+int usDebugPushMessage(int aToken, const char *aMessage)
+{
+	usDebugAddTask(aToken, printNonFormattedMessage, aMessage);
 }
 
 void usDebugIterDebugLoop()

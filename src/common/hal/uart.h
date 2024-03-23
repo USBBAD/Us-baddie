@@ -21,4 +21,6 @@ int uartTryPuts(uint8_t aUartNumber, const char *aOutput);
 
 int uartTryPutsLen(uint8_t aUartNumber, const char *aOutput, size_t aOutputLen);
 
+void uartBusyWaitForWritten(uint8_t aUartNumber);
+
 #endif // COMMON_HAL_UART_H_

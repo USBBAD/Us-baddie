@@ -9,6 +9,7 @@
 #include "stm32f103c6_adc.h"
 #include "stm32f103c6_dma.h"
 #include "stm32f103c6_uart.h"
+#include "usb.h"
 #include "target/target.h"
 
 struct Target
@@ -57,6 +58,7 @@ TargetHandle targetInitialize()
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();
+	usbInitialize();
 
 	return (TargetHandle)&sTarget;
 }

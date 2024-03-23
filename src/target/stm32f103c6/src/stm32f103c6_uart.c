@@ -259,3 +259,19 @@ int uartTryPuts(uint8_t aUartNumber, const char *aOutput)
 
 	return uartTryPutsLen(aUartNumber, aOutput, bufferLen);
 }
+
+int uartBusyWaitForWritten(uint8_t aUartNumber)
+{
+	struct Tx *tx = 0;
+
+	switch (aUartNumber) {
+		case 1:
+			tx = &sUart1Tx;
+
+			break;
+	}
+
+	if (tx) {
+		while (txIsTransmitting(tx));
+	}
+}

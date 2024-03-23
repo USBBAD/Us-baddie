@@ -17,7 +17,7 @@ static size_t sCounter = 0U;
 
 static void printFailedToAddTask(const void *aContext)
 {
-	usvprintf("Failed to add debug callback for \"%s\"", (const char *)aContext);
+	usvprintf("Failed to add debug callback for \"%s\"\r\n", (const char *)aContext);
 }
 
 static void printNonFormattedMessage(const void *aMessage)
@@ -63,7 +63,7 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg)
 		return -1;
 	}
 
-	for (int i = 0; i < US_DEBUG_MAX_TOKEN_SLOTS; ++i) {
+	for (int i = 0; i < US_DEBUG_MAX_TOKEN_SLOTS + 1; ++i) {
 		if (i == US_DEBUG_FAIL_TOKEN_SLOT_ID) {
 			sDebugContext[aToken].tokenSlots[i].callable = printFailedToAddTask;
 			sDebugContext[aToken].tokenSlots[i].arg = sDebugContext[aToken].context;

@@ -59,7 +59,9 @@ void USB_HP_CAN1_TX_IRQHandler()
 /// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
+	volatile USB_TypeDef *usb = USB;
 	usDebugPushMessage(sDebugToken, "Got LP USB/CAN ISR");
+	usb->ISTR = 0;
 }
 
 void USBWakeUp_IRQHandler()
@@ -77,8 +79,8 @@ static void enableClock()
 static void enableNvicInterrupts()
 {
 	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
-	NVIC_EnableIRQ(USBWakeUp_IRQn);
+//	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
+//	NVIC_EnableIRQ(USBWakeUp_IRQn);
 }
 
 /// \brief Initialize control endpoint to enable enumeration.
@@ -87,6 +89,14 @@ static void enableNvicInterrupts()
 void initializeControlEndpoint(volatile USB_TypeDef *aUsb)
 {
 	aUsb->EP0R = 0;
+	// Switch expected DATA packet to "DATA1" (toggle, pre: hasn't been written before)
+	aUsb->EP0R = USB_EP0R_DTOG_RX
+		// Toggle STAT_RX bits to 0b11 to signify the endpoint as valid
+		| 0b11 << USB_EP0R_STAT_RX_Pos
+		// Doggle data packet into DATA1
+		| USB_EP0R_DTOG_TX
+		// Toggle STAT_TX bits to 0b11 to signify the endpoint as valid
+		| 0b11 << USB_EP0R_STAT_TX_Pos;
 }
 
 void initializeEndpoints(volatile USB_TypeDef *aUsb)
@@ -112,10 +122,11 @@ static void initializeBufferDescriptionTable(volatile USB_TypeDef *aUsb)
 static void enableUsbInterrupts(volatile USB_TypeDef *aUsb)
 {
 	// Enable correct transfer interrupt
-	aUsb->CNTR |= USB_CNTR_CTRM;
-
-	// Enable reset interrupt
-	aUsb->CNTR |= USB_CNTR_RESETM;
+	aUsb->CNTR |= USB_CNTR_CTRM
+		// Enable reset interrupt
+		| USB_CNTR_RESETM
+		// Enable start of frame interrupt
+		| USB_CNTR_SOFM;
 }
 
 static void onResetInterrupt()
@@ -141,27 +152,25 @@ void usbInitialize()
 	// Power up: deassert power down, RM0008 Rev 21 p 626
 	// TODO XXX: the datasheet says it should be set, not reset. The reference
 	// describes it as "switched off when 1". Plus, libcm3 resets the register.
-	usb->CNTR &= ~(USB_CNTR_PDWN);
+	usb->CNTR = 0;
 
 	// Wait for 1 uS TODO: replace w/ the actual delay XXX
 	for (int i = 0xffffff; i; --i);
 
-	// Deassert USB reset, RM0008 Rev 21 p 626
-	usb->CNTR &= ~(USB_CNTR_FRES);
-
 	// Clear any pending interrupts, RM0008 Rev 21 p 626
 	usb->ISTR = 0;
+
+	// Reset other registers XXX
+	usb->DADDR = 0;
+	usb->BTABLE = 0;
 
 	enableNvicInterrupts();
 	// TODO configure other registers
 	// TODO unmask USB events to enable interrupts
 
 	initializeEndpoints(usb);
-
 	initializeBufferDescriptionTable(usb);
-
 	enableUsbInterrupts(usb);
-
 	enableUsbDevice(usb);
 	sDebugToken = usDebugRegisterToken("usb");
 	usDebugPushMessage(sDebugToken, "Initialization completed");

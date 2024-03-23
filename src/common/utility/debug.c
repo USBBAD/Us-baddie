@@ -13,6 +13,8 @@
 #include "utility/usvprintf.h"
 #include <string.h>
 
+static size_t sCounter = 0U;
+
 static void printFailedToAddTask(const void *aContext)
 {
 	usvprintf("Failed to add debug callback for \"%s\"", (const char *)aContext);
@@ -26,6 +28,7 @@ static void printNonFormattedMessage(const void *aMessage)
 struct TokenSlot {
 	UsDebugCallable callable;
 	const void *arg;
+	size_t counter;
 };
 
 struct DebugContext {
@@ -63,14 +66,14 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg)
 	for (int i = 0; i < US_DEBUG_MAX_TOKEN_SLOTS; ++i) {
 		if (i == US_DEBUG_FAIL_TOKEN_SLOT_ID) {
 			sDebugContext[aToken].tokenSlots[i].callable = printFailedToAddTask;
-
-			// Safe cast, won't be changed
 			sDebugContext[aToken].tokenSlots[i].arg = sDebugContext[aToken].context;
+			sDebugContext[aToken].tokenSlots[i].counter = sCounter++;
 
 			return -1;
 		} else  if (sDebugContext[aToken].tokenSlots[i].callable == 0) {
 			sDebugContext[aToken].tokenSlots[i].callable = aCallable;
 			sDebugContext[aToken].tokenSlots[i].arg = aArg;
+			sDebugContext[aToken].tokenSlots[i].counter = sCounter++;
 
 			return 1;
 		}
@@ -93,7 +96,7 @@ void usDebugIterDebugLoop()
 
 		for (int j = 0; j < US_DEBUG_MAX_TOKEN_SLOTS + 1; ++j) {
 			if (sDebugContext[i].tokenSlots[j].callable) {
-				usvprintf("[%s] ", sDebugContext[i].context);
+				usvprintf("%u [%s] ", sDebugContext[i].tokenSlots[j].counter, sDebugContext[i].context);
 				sDebugContext[i].tokenSlots[j].callable(sDebugContext[i].tokenSlots[j].arg);
 				sDebugContext[i].tokenSlots[j].callable = 0;
 				sDebugContext[i].tokenSlots[j].arg = 0;

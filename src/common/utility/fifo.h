@@ -38,8 +38,10 @@ static void *fifoPop(Fifo *aFifo)
 		return 0;
 	}
 
-	aFifo->readPosition = aFifo->readPosition % aFifo->capacity;
+	aFifo->readPosition = (aFifo->readPosition + 1) % aFifo->capacity;
 	--aFifo->size;
+
+	return res;
 }
 
 /// \brief Returns non-null, if successful

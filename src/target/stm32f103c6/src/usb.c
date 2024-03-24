@@ -33,6 +33,8 @@ static int sDebugToken = -1;
 
 #define USB_EPXR_EP_TYPE_CONTROL (0b11)
 
+#define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (4)
+
 /// \brief Memory layout for single buffer configuration
 /// \details Memory mapping from APB to packet buffer memory is sparse,
 /// because USB uses 16-bit words. Thus, 4 byte increment in MCU memory
@@ -50,7 +52,7 @@ typedef union {
 
 struct UsbIsrContext {
 	uint16_t istr;
-} sUsbIsrContext[4] = {{0}};
+} sUsbIsrContext[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
 
 static Fifo sUsbIsrContextFifo;
 
@@ -68,10 +70,22 @@ void USB_HP_CAN1_TX_IRQHandler()
 
 static void dumpRegisters(const void *aIstr)
 {
-	struct UsbIsrContext *usbIsrContext = fifoPop(&sUsbIsrContextFifo);
+	struct UsbIsrContext *usbIsrContext;
 
-	if (usbIsrContext) {
-		usvprintf("USB ISR registers ISTR=0x%08X\r\n", usbIsrContext->istr);
+	while ((usbIsrContext = fifoPop(&sUsbIsrContextFifo))) {
+		if (usbIsrContext) {
+			usvprintf("USB ISR registers\r\n", usbIsrContext->istr);
+			usvprintf("ISTR=0x%08X\r\n", (uint32_t)usbIsrContext->istr);
+			usvprintf("ISTR_CTR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_CTR_Msk) >> USB_ISTR_CTR_Pos);
+			usvprintf("ISTR_ERR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ERR_Msk) >> USB_ISTR_ERR_Pos);
+			usvprintf("ISTR_WKUP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_WKUP_Msk) >> USB_ISTR_WKUP_Pos);
+			usvprintf("ISTR_SUSP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SUSP_Msk) >> USB_ISTR_SUSP_Pos);
+			usvprintf("ISTR_RESET=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_RESET_Msk) >> USB_ISTR_RESET_Pos);
+			usvprintf("ISTR_SOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SOF_Msk) >> USB_ISTR_SOF_Pos);
+			usvprintf("ISTR_ESOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ESOF_Msk) >> USB_ISTR_ESOF_Pos);
+			usvprintf("ISTR_DIR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos);
+			usvprintf("ISTR_EP_ID=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos);
+		}
 	}
 }
 
@@ -90,8 +104,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	volatile USB_TypeDef *usb = USB;
 	// Load operation will clear the register, no need to assign to 0, RM0008 Rev 21 p 639
 	volatile uint16_t istr = usb->ISTR;
-	enqueueDumpRegisters(istr);
-	usDebugPushMessage(sDebugToken, "Got LP USB/CAN ISR");
+
+	if ((istr & USB_ISTR_SOF) == 0) {
+		enqueueDumpRegisters(istr);
+	}
+
 	usb->ISTR = 0;
 }
 
@@ -204,7 +221,7 @@ void usbInitialize()
 	enableUsbInterrupts(usb);
 	enableUsbDevice(usb);
 	sDebugToken = usDebugRegisterToken("usb");
-	fifoInitialize(&sUsbIsrContextFifo, &sUsbIsrContext, 4, sizeof(struct UsbIsrContext));
+	fifoInitialize(&sUsbIsrContextFifo, &sUsbIsrContext, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct UsbIsrContext));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
 }
 

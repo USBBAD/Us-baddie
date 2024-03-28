@@ -1,3 +1,6 @@
 [submodule "lib/stm32cubef1/stm32cubef1"]
 	path = lib/stm32cubef1/stm32cubef1
 	url = https://github.com/damurashov/STM32CubeF1.git
+[submodule "lib/cmsis5/cmsis5"]
+	path = lib/cmsis5/cmsis5
+	url = https://github.com/USBBAD/CMSIS_5.git

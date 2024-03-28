@@ -337,6 +337,7 @@ void usbInitialize()
 	// TODO configure other registers
 	// TODO unmask USB events to enable interrupts
 
+	usStm32f1UsbSetBdt(0xffff, 256, 0);
 	initializeEndpoints(usb);
 	initializeBufferDescriptionTable(usb);
 	enableUsbInterrupts(usb);

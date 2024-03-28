@@ -24,4 +24,14 @@ void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_
 /// \details Quite similar to `usStm32UsbReadBdt`. Refer to its description
 void usStm32f1UsbWriteBdt(uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset);
 
+/// \param `aWriteSequenceLength` -- in half-words
+static inline void usStm32f1UsbSetBdt(uint16_t aValue, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
+{
+	while (aWriteSequenceLength) {
+		usStm32f1UsbWriteBdt(&aValue, 1, aUsbBdtInnerOffset);
+		aUsbBdtInnerOffset += 2;
+		aWriteSequenceLength -= 2;
+	}
+}
+
 #endif  // SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_

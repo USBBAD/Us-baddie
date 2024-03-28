@@ -2,29 +2,9 @@ cmake_minimum_required(VERSION 3.12)
 set(CMAKE_C_STANDARD 99)
 project(usbad)
 enable_language(ASM)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} cmake)
 
-# BUILD CONFIGURATION (SUBJECT TO FURTHER OPTIONING)
-
-# Target platform
-set(TARGET_PREFIX "src/target/stm32f103c6")
-message(STATUS "Target Prefix is `${TARGET_PREFIX}`")
-
-# Toolchain
-set(TOOLCHAIN "gcc")
-message(STATUS "Using toolchain: `${TOOLCHAIN}`")
-set(GCC_TOOLCHAIN_PATH_PREFIX "")
-set(GCC_TOOLCHAIN_NAME_PREFIX "arm-none-eabi-")
-set(USE_STM32CUBEF1_LIBRARY ON)
-set(USE_STM32F103C6_TARGET ON)
-
-# Project libraries
-message(STATUS "The following libraries will be compiled: ${LINKED_LIBRARIES}")
-
-# Build type (Debug, Release)
-#
-# The "CMAKE_BUILD_TYPE" variable is deliberately neglected, as it implicitly
-# affects compilation through, for example, setting optimization flags
-message(STATUS "Build type: ${BUILD_TYPE}")
+include(config)
 
 # Validate build configuration
 

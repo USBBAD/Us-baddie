@@ -8,6 +8,9 @@
 #ifndef SRC_COMMON_UTILITY_DEBUG_H_
 #define SRC_COMMON_UTILITY_DEBUG_H_
 
+#include "utility/usvprintf.h"
+#include <stdint.h>
+
 typedef void(*UsDebugCallable)(const void *);
 
 /// \brief Each module is associated w/ a token
@@ -26,6 +29,10 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg);
 int usDebugPushMessage(int aToken, const char *aMessage);
 
 void usDebugIterDebugLoop();
+
+void usDebugPrintU8Array(const void *aData, size_t aDataLength);
+
+void usDebugPrintU16Array(const void *aData, size_t aDataLength);
 
 #endif  // SRC_COMMON_UTILITY_DEBUG_H_
 

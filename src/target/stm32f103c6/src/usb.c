@@ -8,6 +8,7 @@
 #ifndef SRC_TARGET_STM32F103C6_SRC_USB_C_
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
+#include "target/arm/stm32/stm32f1_usb.h"
 #include "utility/debug.h"
 #include "utility/fifo.h"
 #include "utility/usvprintf.h"
@@ -33,14 +34,14 @@ static int sDebugToken = -1;
 
 #define USB_EPXR_EP_TYPE_CONTROL (0b11)
 
-#define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (4)
+#define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (1)
 
 /// \brief Memory layout for single buffer configuration
 /// \details Memory mapping from APB to packet buffer memory is sparse,
 /// because USB uses 16-bit words. Thus, 4 byte increment in MCU memory
 /// corresponds to 2 byte increment in USB memory space. See also RM0008 Rev 21
 /// p 628
-typedef union {
+typedef struct {
     struct {
         volatile uint32_t addrTx;  // in units of uint16, always even
         volatile uint32_t countTx;
@@ -52,13 +53,19 @@ typedef union {
 
 struct UsbIsrContext {
 	uint16_t istr;
+	uint16_t ep0r;
 } sUsbIsrContext[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
+
+static size_t getRxSize(uint8_t aEndpoint);
+
+uint8_t sRxBuffer[64];
+size_t sRxBufferSize;
 
 static Fifo sUsbIsrContextFifo;
 
 static inline volatile UsbMemoryMap *getUsbMemoryMap()
 {
-	return (volatile UsbMemoryMap *)(&USB->BTABLE);
+	return (volatile UsbMemoryMap *)(0x40006000);
 }
 
 /// \details Handles high priority USB interrupts (RM0008 Rev 21 p 625)
@@ -68,9 +75,10 @@ void USB_HP_CAN1_TX_IRQHandler()
 	usDebugPushMessage(sDebugToken, "Got HP USB/CAN ISR");
 }
 
-static void dumpRegisters(const void *aIstr)
+static void dumpRegisters(const void *a)
 {
 	struct UsbIsrContext *usbIsrContext;
+	(void)a;
 
 	while ((usbIsrContext = fifoPop(&sUsbIsrContextFifo))) {
 		if (usbIsrContext) {
@@ -85,15 +93,24 @@ static void dumpRegisters(const void *aIstr)
 			usvprintf("ISTR_ESOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ESOF_Msk) >> USB_ISTR_ESOF_Pos);
 			usvprintf("ISTR_DIR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos);
 			usvprintf("ISTR_EP_ID=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos);
+			usvprintf("ISTR_EP0R=0x%08X\r\n", (usbIsrContext->ep0r));
+			usvprintf("ISTR_EP0R_SETUP=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_SETUP_Msk) >> USB_EP0R_SETUP_Pos);
+			usvprintf("ISTR_EP0R_CTR_RX=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_CTR_RX_Msk) >> USB_EP0R_CTR_RX_Pos);
 		}
 	}
 }
 
-static void enqueueDumpRegisters(uint16_t aIstr)
+static void printRxSize(const void *aSize)
+{
+	usvprintf("rx size: %d", (size_t)aSize);
+}
+
+static void enqueueDumpRegisters(uint16_t aIstr, uint16_t aEpxr)
 {
 	struct UsbIsrContext *usbIsrContext = fifoPush(&sUsbIsrContextFifo);
 	*usbIsrContext = (struct UsbIsrContext) {
 		.istr = aIstr,
+		.ep0r = aEpxr,
 	};
 	usDebugAddTask(sDebugToken, dumpRegisters, 0);
 }
@@ -104,9 +121,12 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	volatile USB_TypeDef *usb = USB;
 	// Load operation will clear the register, no need to assign to 0, RM0008 Rev 21 p 639
 	volatile uint16_t istr = usb->ISTR;
+	volatile uint16_t ep0r = usb->EP0R;
+	size_t rxSize = getRxSize(0);
 
-	if ((istr & USB_ISTR_SOF) == 0) {
-		enqueueDumpRegisters(istr);
+	if (rxSize) {
+		usDebugAddTask(sDebugToken, printRxSize, (void *)rxSize);
+		enqueueDumpRegisters(istr, ep0r);
 	}
 
 	usb->ISTR = 0;
@@ -129,6 +149,11 @@ static void enableNvicInterrupts()
 	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
 //	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
 //	NVIC_EnableIRQ(USBWakeUp_IRQn);
+}
+
+static size_t getRxSize(uint8_t aEndpoint)
+{
+	return (getUsbMemoryMap()->btable[aEndpoint].countRx & ((1 << 10) - 1));
 }
 
 /// \brief Initialize control endpoint to enable enumeration.
@@ -190,6 +215,15 @@ static void enableUsbDevice(volatile USB_TypeDef *aUsb)
 	aUsb->DADDR |= USB_DADDR_EF;
 }
 
+static void debugPrintUsbBdtContent(const void *aArg)
+{
+	uint16_t usbBdtContent[64] = {0};
+	usStm32f1UsbReadBdt((uint16_t *)&usbBdtContent, 64, 0);
+	usvprintf("USB BDT content: ");
+	usDebugPrintU16Array(usbBdtContent, 64);
+	usvprintf("\r\n");
+}
+
 void usbInitialize()
 {
 	volatile USB_TypeDef *usb = USB;
@@ -223,6 +257,7 @@ void usbInitialize()
 	sDebugToken = usDebugRegisterToken("usb");
 	fifoInitialize(&sUsbIsrContextFifo, &sUsbIsrContext, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct UsbIsrContext));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
+	usDebugAddTask(sDebugToken, debugPrintUsbBdtContent, 0);
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

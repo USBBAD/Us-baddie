@@ -11,8 +11,8 @@
 #define US_DEBUG_MAX_OVERALL_TOKEN_SLOTS (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS + 1)
 
 #include "utility/debug.h"
-#include "utility/usvprintf.h"
 #include "utility/fifo.h"
+#include "utility/usvprintf.h"
 #include <string.h>
 
 static size_t sCounter = 0U;
@@ -112,4 +112,37 @@ void usDebugIterDebugLoop()
 
 		fifoClear(&sDebugContext[i].fifo);
 	}
+}
+
+static inline void printAs(const void *aData, size_t aDataTypeSizeof)
+{
+	int64_t data = 0;
+}
+
+/// \def Performs formatted print
+/// \arg `rowlen` if non 0, output data will be aligned in a neat table
+/// \arg `delimiter` what will be printed b/w numbers
+#define USBAD_PRINT_ARRAY(numtype, data, size, format, delimiter, rowlen) \
+	do { \
+		const numtype *ptr = (numtype *)data; \
+		size_t nlCounter = 0; \
+		for (; ptr != (numtype *)data + size; ++ptr) { \
+			if (nlCounter) { \
+				usvprintf(delimiter); \
+			} else if (rowlen) { \
+				usvprintf("\r\n"); \
+			} \
+			nlCounter = rowlen ? (nlCounter + 1) % rowlen : nlCounter + 1; \
+			usvprintf(format, *ptr); \
+		} \
+	} while (0);
+
+void usDebugPrintU8Array(const void *aData, size_t aDataLength)
+{
+	USBAD_PRINT_ARRAY(uint8_t, aData, aDataLength, "0x%02X", " ", 8);
+}
+
+void usDebugPrintU16Array(const void *aData, size_t aDataLength)
+{
+	USBAD_PRINT_ARRAY(uint16_t, aData, aDataLength, "0x%04X", " ", 8);
 }

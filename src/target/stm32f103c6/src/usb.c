@@ -36,6 +36,8 @@ static int sDebugToken = -1;
 
 #define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (1)
 
+#define USBAD_USB_MAX_ENDPOINTS (1)
+
 /// \brief Memory layout for single buffer configuration
 /// \details Memory mapping from APB to packet buffer memory is sparse,
 /// because USB uses 16-bit words. Thus, 4 byte increment in MCU memory
@@ -66,6 +68,84 @@ static Fifo sUsbIsrContextFifo;
 static inline volatile UsbMemoryMap *getUsbMemoryMap()
 {
 	return (volatile UsbMemoryMap *)(0x40006000);
+}
+
+/// \pre BTABLE register must be set
+static inline void setUsbAddrnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbCountnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 2;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbAddrnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 4;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbCountnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 6;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbAddrnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbCountnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 2;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbAddrnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 4;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbCountnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 6;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \brief Get minimum required BDT offset based on the number of endpoints
+/// The more the number of endpoints is, the bigger the table must be
+/// RM0008 rev 21 p 650
+static inline size_t getMinInnerBdtOffset(size_t aEndpoints)
+{
+	return aEndpoints * 8;
 }
 
 /// \details Handles high priority USB interrupts (RM0008 Rev 21 p 625)
@@ -185,11 +265,18 @@ static void initializeBufferDescriptionTable(volatile USB_TypeDef *aUsb)
 	// Locate buffer table at 0th offset of the buffer table memory
 	aUsb->BTABLE = 0;
 
-	// TODO: XXX: endpoint-specific configuration
-	// Control endpoint
-	getUsbMemoryMap()->btable[0].addrTx = BUFFER_DESCRIPTOR_TABLE_SIZE;
-	getUsbMemoryMap()->btable[0].addrRx = BUFFER_DESCRIPTOR_TABLE_SIZE + USBAD_USB_BUFFER_SIZE * 1;
-	getUsbMemoryMap()->btable[0].countRx = USBAD_USB_COUNTX_64_BYTES;
+	setUsbAddrnTx(aUsb, 0, getMinInnerBdtOffset(USBAD_USB_MAX_ENDPOINTS));
+	// Buffer size is 64, no double-buffering is used
+	setUsbAddrnRx(aUsb, 0, getMinInnerBdtOffset(USBAD_USB_MAX_ENDPOINTS) + USBAD_USB_BUFFER_SIZE);
+
+	// BL_SIZE = 1 | NUM_BLOCK = 1 (gets interpreted as 64 bytes): no double buffering is used, RM0008 rev 21 p 650
+#if USBAD_USB_BUFFER_SIZE != 64
+#  error Incorrect block configuration!
+#endif
+	setUsbCountnRx(aUsb, 0, (1 << 15) | (1 << 10));
+
+	// Not needed, just for symmetry
+	setUsbCountnTx(aUsb, 0, 0);
 }
 
 static void enableUsbInterrupts(volatile USB_TypeDef *aUsb)

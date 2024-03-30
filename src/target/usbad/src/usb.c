@@ -8,7 +8,7 @@
 #ifndef SRC_TARGET_STM32F103C6_SRC_USB_C_
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
-#include "target/arm/stm32/stm32f1_usb.h"
+#include "arm/stm32f1/stm32f1_usb.h"
 #include "utility/debug.h"
 #include "utility/fifo.h"
 #include "utility/usvprintf.h"
@@ -59,6 +59,7 @@ struct UsbIsrContext {
 } sUsbIsrContext[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
 
 static size_t getRxSize(uint8_t aEndpoint);
+static void enableUsbDevice(volatile USB_TypeDef *aUsb);
 
 uint8_t sRxBuffer[64];
 size_t sRxBufferSize;
@@ -155,67 +156,91 @@ void USB_HP_CAN1_TX_IRQHandler()
 	usDebugPushMessage(sDebugToken, "Got HP USB/CAN ISR");
 }
 
-static void dumpRegisters(const void *a)
+static void debugDumpRegisters(const void *a)
 {
 	struct UsbIsrContext *usbIsrContext;
 	(void)a;
 
 	while ((usbIsrContext = fifoPop(&sUsbIsrContextFifo))) {
-		if (usbIsrContext) {
-			usvprintf("USB ISR registers\r\n", usbIsrContext->istr);
-			usvprintf("ISTR=0x%08X\r\n", (uint32_t)usbIsrContext->istr);
-			usvprintf("ISTR_CTR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_CTR_Msk) >> USB_ISTR_CTR_Pos);
-			usvprintf("ISTR_ERR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ERR_Msk) >> USB_ISTR_ERR_Pos);
-			usvprintf("ISTR_WKUP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_WKUP_Msk) >> USB_ISTR_WKUP_Pos);
-			usvprintf("ISTR_SUSP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SUSP_Msk) >> USB_ISTR_SUSP_Pos);
-			usvprintf("ISTR_RESET=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_RESET_Msk) >> USB_ISTR_RESET_Pos);
-			usvprintf("ISTR_SOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SOF_Msk) >> USB_ISTR_SOF_Pos);
-			usvprintf("ISTR_ESOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ESOF_Msk) >> USB_ISTR_ESOF_Pos);
-			usvprintf("ISTR_DIR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos);
-			usvprintf("ISTR_EP_ID=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos);
-			usvprintf("ISTR_EP0R=0x%08X\r\n", (usbIsrContext->ep0r));
-			usvprintf("ISTR_EP0R_SETUP=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_SETUP_Msk) >> USB_EP0R_SETUP_Pos);
-			usvprintf("ISTR_EP0R_CTR_RX=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_CTR_RX_Msk) >> USB_EP0R_CTR_RX_Pos);
-		}
+		usvprintf("USB ISR registers\r\n", usbIsrContext->istr);
+		usvprintf("ISTR=0x%08X\r\n", (uint32_t)usbIsrContext->istr);
+		usvprintf("ISTR_CTR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_CTR_Msk) >> USB_ISTR_CTR_Pos);
+		usvprintf("ISTR_ERR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ERR_Msk) >> USB_ISTR_ERR_Pos);
+		usvprintf("ISTR_WKUP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_WKUP_Msk) >> USB_ISTR_WKUP_Pos);
+		usvprintf("ISTR_SUSP=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SUSP_Msk) >> USB_ISTR_SUSP_Pos);
+		usvprintf("ISTR_RESET=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_RESET_Msk) >> USB_ISTR_RESET_Pos);
+		usvprintf("ISTR_SOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_SOF_Msk) >> USB_ISTR_SOF_Pos);
+		usvprintf("ISTR_ESOF=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_ESOF_Msk) >> USB_ISTR_ESOF_Pos);
+		usvprintf("ISTR_DIR=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos);
+		usvprintf("ISTR_EP_ID=0x%08X\r\n", (usbIsrContext->istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos);
+		usvprintf("ISTR_EPxR=0x%08X\r\n", (usbIsrContext->ep0r));
+		usvprintf("ISTR_EPxR_SETUP=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_SETUP_Msk) >> USB_EP0R_SETUP_Pos);
+		usvprintf("ISTR_EPxR_CTR_RX=0x%08X\r\n", (usbIsrContext->ep0r & USB_EP0R_CTR_RX_Msk) >> USB_EP0R_CTR_RX_Pos);
 	}
 }
 
-static void printRxSize(const void *aSize)
+static void debugPrintRxSize(const void *aSize)
 {
 	usvprintf("rx size: %d", (size_t)aSize);
 }
 
-static void enqueueDumpRegisters(uint16_t aIstr, uint16_t aEpxr)
+/// \brief enables endpoint for both tx and rx
+static void enableEndpointRx(volatile USB_TypeDef *aUsb, uint8_t aEndpoint)
+{
+	volatile uint16_t *epnr = &aUsb->EP0R + (aEndpoint * 2);
+
+	// Prepare masks
+	const uint16_t rxValid = (uint16_t)(USB_EP0R_STAT_RX_Msk << USB_EP0R_STAT_RX_Pos);
+
+	// Toggle bits (w1 => toggle, w0 => leave unchanged)
+	*epnr |= (*epnr ^ rxValid);
+}
+
+static void enableEndpointTx(volatile USB_TypeDef *aUsb, uint8_t aEndpoint)
+{
+	volatile uint16_t *epnr = &aUsb->EP0R + (aEndpoint * 2);
+}
+
+static void debugEnqueueDumpRegisters(uint16_t aIstr, uint16_t aEpxr)
 {
 	struct UsbIsrContext *usbIsrContext = fifoPush(&sUsbIsrContextFifo);
-	*usbIsrContext = (struct UsbIsrContext) {
-		.istr = aIstr,
-		.ep0r = aEpxr,
-	};
-	usDebugAddTask(sDebugToken, dumpRegisters, 0);
+
+	if (usbIsrContext) {
+		*usbIsrContext = (struct UsbIsrContext) {
+			.istr = aIstr,
+			.ep0r = aEpxr,
+		};
+		usDebugAddTask(sDebugToken, debugDumpRegisters, 0);
+	}
+
 }
 
 /// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 	volatile USB_TypeDef *usb = USB;
-	// Load operation will clear the register, no need to assign to 0, RM0008 Rev 21 p 639
+
 	volatile uint16_t istr = usb->ISTR;
 	volatile uint16_t ep0r = usb->EP0R;
-	size_t rxSize = getRxSize(0);
 
-	if (rxSize) {
-		usDebugAddTask(sDebugToken, printRxSize, (void *)rxSize);
-		enqueueDumpRegisters(istr, ep0r);
+	// Handle reset transaction as per RM0008 rev 21 p 639
+	if (istr & USB_ISTR_RESET) {
+		// Enable USB fubctionality: RM0008 rev 21 p 626 ("USB Reset")
+		enableUsbDevice(usb);
+
+		// Enable control endpoint
+		enableEndpointRx(usb, 0);
+
+		usDebugPushMessage(sDebugToken, "Got RESET interrupt, enabled USB, enabled control endpoint");
 	}
 
+	// Clear ISTR
 	usb->ISTR = 0;
 }
 
 void USBWakeUp_IRQHandler()
 {
 	usDebugPushMessage(sDebugToken, "Got USB wakeup ISR");
-// TODO
 }
 
 static void enableClock()
@@ -245,11 +270,7 @@ void initializeControlEndpoint(volatile USB_TypeDef *aUsb)
 	// Switch expected DATA packet to "DATA1" (toggle, pre: hasn't been written before)
 	aUsb->EP0R = USB_EP0R_DTOG_RX
 		// Toggle STAT_RX bits to 0b11 to signify the endpoint as valid
-		| 0b11 << USB_EP0R_STAT_RX_Pos
-		// Doggle data packet into DATA1
-		| USB_EP0R_DTOG_TX
-		// Toggle STAT_TX bits to 0b11 to signify the endpoint as valid
-		| 0b11 << USB_EP0R_STAT_TX_Pos;
+		| USB_EP0R_DTOG_TX;
 }
 
 void initializeEndpoints(volatile USB_TypeDef *aUsb)
@@ -341,7 +362,6 @@ void usbInitialize()
 	initializeEndpoints(usb);
 	initializeBufferDescriptionTable(usb);
 	enableUsbInterrupts(usb);
-	enableUsbDevice(usb);
 	sDebugToken = usDebugRegisterToken("usb");
 	fifoInitialize(&sUsbIsrContextFifo, &sUsbIsrContext, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct UsbIsrContext));
 	usDebugPushMessage(sDebugToken, "Initialization completed");

@@ -6,7 +6,6 @@
 //
 
 #include "hal/adc.h"
-#include "target/arm/stm32/stm32f1_usb.h"
 #include "hal/dma.h"
 #include "hal/uart.h"
 #include "target/target.h"

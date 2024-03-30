@@ -1,9 +1,19 @@
-if (USE_STM32F103C6_TARGET)
-	add_subdirectory(target/stm32f103c6)
-	target_include_directories(stm32f103c6 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/common")
+file(GLOB_RECURSE COMMON_SOURCES
+		"hal/*.c"
+		"utility/*.c")
+file(GLOB_RECURSE TARGET_SOURCES ${US_TARGET_SOURCES})
+add_executable(application
+		${COMMON_SOURCES}
+		${TARGET_SOURCES})
+target_include_directories(application PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${US_TARGET_INCLUDE_DIRECTORIES})
 
-	# Set TARGET_PLATFORM_LIBRARY_NAME for target 
-	set(TARGET_PLATFORM_LIBRARY_NAME stm32f103c6)
-endif()
+message(STATUS "Linked libraries: ${US_TARGET_LINKED_LIBRARIES}") 
+message(STATUS "Linker options: ${US_TARGET_LINKER_OPTIONS}")
+message(STATUS "Compile options: ${US_TARGET_COMPILE_OPTIONS}")
 
-add_subdirectory(common)  # Builds executable "application"
+target_link_libraries(application PUBLIC ${US_TARGET_LINKED_LIBRARIES}) 
+target_link_options(application PUBLIC "SHELL:${US_TARGET_LINKER_OPTIONS}")
+target_compile_options(application PUBLIC "SHELL:${US_TARGET_COMPILE_OPTIONS}")
+set_target_properties(application PROPERTIES LINKER_LANGUAGE C)

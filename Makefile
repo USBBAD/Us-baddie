@@ -9,17 +9,18 @@ OUTPUT_HEX_IMAGE_PATH = build/firmware.hex
 OBJDUMP = arm-none-eabi-objdump
 OBJCOPY = arm-none-eabi-objcopy
 
-build_release: $(CONFIG_NAME)
+main: build
+
+config.cmake:
+	find ./cmake/config -type f | fzf | xargs -I {} ln -s {} config.cmake
+
+build: config.cmake
 	mkdir -p build  \
 		&& cd build \
-		&& cmake .. -DBUILD_TYPE=Release \
+		&& cmake .. \
 		&& $(MAKE) -j$(shell nproc)
 
-build_debug: $(CONFIG_NAME)
-	mkdir -p build  \
-		&& cd build \
-		&& cmake .. -DBUILD_TYPE=Debug \
-		&& $(MAKE) -j$(shell nproc)
+.PHONY: build
 
 # Run `make clean` in build directory
 clean:

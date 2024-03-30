@@ -6,3 +6,4 @@ ProjectConfiguration.make
 *.user
 *.lck
 .commitmsg
+config.cmake

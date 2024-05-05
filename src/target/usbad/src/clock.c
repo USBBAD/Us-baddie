@@ -9,7 +9,7 @@
 #include <stm32f103x6.h>
 #include <stdint.h>
 
-static void clockInitializeHse72Mhz();
+static void clockInitializeHse72Mhz(void);
 static void clockInitializeHsi48Mhz();
 static void clockInitializeHsi8Mhz();
 static void enableAdc1Clock();
@@ -28,53 +28,58 @@ static uint64_t sAhbPre = 1;
 // RCC APB1 frequency = 72000000;
 // RCC APB2 frequency = 36000000;
 // RCC AHB frequency = 72000000;
-static void clockInitializeHse72Mhz()
+static void clockInitializeHse72Mhz(void)
 {
 	volatile RCC_TypeDef *rcc = RCC;
-	// Enable Internal 8 MHz HSI clock source
+	volatile FLASH_TypeDef *flash = FLASH;
+
+	// Enable HSE
 	rcc->CR |= RCC_CR_HSEON;
 
-	// Wait until HSE is ready
 	while (!(rcc->CR & RCC_CR_HSERDY));
 
-	// APB 1, 36 MHz max, should not exceed, div. SYSCLK
-	rcc->CFGR |= RCC_CFGR_PPRE1_DIV2;
-	sApb1Pre = 2;
-
-	rcc->CFGR |= RCC_CFGR_PPRE2_DIV8;
-	sApb2Pre = 8;
-
-	// Enable 1.5 prescaler to get 48MHz on USB bus
-	rcc->CFGR &= ~RCC_CFGR_USBPRE;
-
-	{
-		// High clock requires setting latency on flash memory access, RM0008 rev. 21
-		volatile FLASH_TypeDef *flash = FLASH;
-		uint32_t ws = 2;
-		// TODO: iffy, as it was imported from CDCACM code
-		volatile uint32_t reg32 = flash->ACR;
-		reg32 &= ~(FLASH_ACR_LATENCY_Msk << FLASH_ACR_LATENCY_Pos);
-		reg32 |= (ws << FLASH_ACR_LATENCY_Pos);
-		flash->ACR = reg32;
+	if ((rcc->CR & RCC_CR_HSERDY) == 0) {
+		// clock failed to become ready
+		// TODO notify and exit
+		return;
 	}
 
-	// Set PLLMUL x 9
-	rcc->CFGR |= RCC_CFGR_PLLMULL9;  // TODO iffy
+	// Enable Prefetch Buffer
+	flash->ACR |= FLASH_ACR_PRFTBE;
 
-	// Select external as PLL clock source
-	rcc->CFGR |= RCC_CFGR_PLLSRC;
+	// Flash 2 wait state
+	flash->ACR &= ~FLASH_ACR_LATENCY;
+	flash->ACR |= FLASH_ACR_LATENCY_2;
 
-	// Enable SRAM
-	rcc->AHBENR |= RCC_AHBENR_SRAMEN;
+	// HCLK = SYSCLK
+	rcc->CFGR |= RCC_CFGR_HPRE_DIV1;
+
+	// PCLK2 = HCLK
+	rcc->CFGR |= RCC_CFGR_PPRE2_DIV1;
+
+	// PCLK1 = HCLK/2
+	rcc->CFGR |= RCC_CFGR_PPRE1_DIV2;
+
+	//  PLL configuration: PLLCLK = HSE * 9 = 72 MHz
+	rcc->CFGR &= ~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL);
+	rcc->CFGR |= (0x00010000 /* HSE */ | RCC_CFGR_PLLMULL9);
 
 	// Enable PLL
 	rcc->CR |= RCC_CR_PLLON;
 
-	// Wait for PLL to get ready
-	while (!(rcc->CR & RCC_CR_PLLRDY));
+	// Wait till PLL is ready
+	while ((rcc->CR & RCC_CR_PLLRDY) == 0) {
+		__asm volatile("nop");
+	}
 
-	// Use PLL as the SYSCLK source (8 MHz external oscillator)
+	// Select PLL as system clock source
+	rcc->CFGR &= ~RCC_CFGR_SW;
 	rcc->CFGR |= RCC_CFGR_SW_PLL;
+
+	// Wait till PLL is used as system clock source
+	while ((rcc->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {
+		__asm volatile("nop");
+	}
 
 	sSysclk = 72000000;
 }

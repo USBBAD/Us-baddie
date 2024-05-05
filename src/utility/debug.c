@@ -6,7 +6,7 @@
 //
 
 #define US_DEBUG_MAX_TOKENS (5)
-#define US_DEBUG_MAX_REGULAR_TOKEN_SLOTS (5)
+#define US_DEBUG_MAX_REGULAR_TOKEN_SLOTS (10)
 #define US_DEBUG_FAIL_TOKEN_SLOT_ID (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS)
 #define US_DEBUG_MAX_OVERALL_TOKEN_SLOTS (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS + 1)
 
@@ -145,4 +145,9 @@ void usDebugPrintU8Array(const void *aData, size_t aDataLength)
 void usDebugPrintU16Array(const void *aData, size_t aDataLength)
 {
 	USBAD_PRINT_ARRAY(uint16_t, aData, aDataLength, "0x%04X", " ", 8);
+}
+
+void usDebugPrintU32Array(const void *aData, size_t aDataLength)
+{
+	USBAD_PRINT_ARRAY(uint32_t, aData, aDataLength, "0x%08X", " ", 8);
 }

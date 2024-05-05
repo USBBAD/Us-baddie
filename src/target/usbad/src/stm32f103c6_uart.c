@@ -181,6 +181,9 @@ static void usartSetTransmissionEnabled(volatile USART_TypeDef *aUsart, int aIsE
 void uartUp()
 {
 	configureGpio();
+
+	// Set the lowest priority for UART
+	NVIC_SetPriority(USART1_IRQn, 255);
 }
 
 int uartConfigure(uint8_t aUartNumber, uint32_t aBaudrate)

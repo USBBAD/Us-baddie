@@ -5,11 +5,9 @@
 //     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
 //
 
-#ifndef SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
-#define SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
-
 #define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
 
+#include <Driver_USBD.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,6 +37,3 @@ void usStm32f1UsbWriteBdt(uint16_t *aInBuffer, size_t aWriteSequenceLength, size
 		++currentOffset;
 	}
 }
-
-#endif  // SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
-

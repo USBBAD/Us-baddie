@@ -8,8 +8,12 @@
 #ifndef SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
 #define SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
 
+#include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>
+
+/// \var Certain bits are toggled when written 1, others are just regular rw, or rc_w0
+#define USBAD_USB_EPXR_NON_TOGGLE_BITS (USB_EP0R_EP_TYPE | USB_EP0R_EP_KIND | USB_EP0R_EA)
 
 /// \brief API for interfacing w/ STM's USB BDT (RM0008 Rev 21 p 648)
 /// \pre aOutBuffer is supposed to be able to accomodate `aReadSequenceLength`
@@ -32,6 +36,141 @@ static inline void usStm32f1UsbSetBdt(uint16_t aValue, size_t aWriteSequenceLeng
 		aUsbBdtInnerOffset += 2;
 		aWriteSequenceLength -= 2;
 	}
+}
+
+/// \pre BTABLE register must be set
+static inline void setUsbAddrnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbAddrnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 4;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbCountnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 2;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void setUsbCountnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 6;
+	usStm32f1UsbWriteBdt(&aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbAddrnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbCountnTx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 2;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbAddrnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 4;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \pre BTABLE register must be set
+/// \warning Calculated w/ account that no double buffering is being used for
+/// any particular enpoint. Otherwise, not valid, and should not be used
+static inline void getUsbCountnRx(volatile USB_TypeDef *aUsb, uint8_t aEp, uint16_t *aValue)
+{
+	size_t bdtInnerOffset = aUsb->BTABLE + aEp * 8 + 6;
+	usStm32f1UsbReadBdt(aValue, 1, bdtInnerOffset);
+}
+
+/// \brief Get minimum required BDT offset based on the number of endpoints
+/// The more the number of endpoints is, the bigger the table must be
+/// RM0008 rev 21 p 650
+/// \param aEndpoint total number of EPs
+static inline size_t getMinInnerBdtOffset(size_t aEndpoints)
+{
+	return 64;
+}
+
+static volatile uint16_t *getEpxr(uint8_t aEndpointNumber)
+{
+	return &USB->EP0R + 2 * aEndpointNumber;
+}
+
+/// \brief Automatically decides whether a bit is of "w-1-toggle" type, and applies applicable setting strategy
+/// \returns previous value
+/// \post CTR_RX and CTR_TX will be cleared as a result of reading from the register
+static uint16_t setEpxrBits(volatile USB_TypeDef *aUsb, uint8_t aEndpoint, uint16_t aValue, uint16_t aOffset,
+	uint16_t aMask)
+{
+	volatile uint16_t *epxr = getEpxr(aEndpoint);
+	const uint16_t previousValue = *epxr;
+
+	if (aMask & USBAD_USB_EPXR_NON_TOGGLE_BITS) {
+		// TODO: previous value is not cleared
+		*epxr = (previousValue & USBAD_USB_EPXR_NON_TOGGLE_BITS) | (aValue << aOffset);
+	} else {
+		*epxr = (previousValue & USBAD_USB_EPXR_NON_TOGGLE_BITS) | ((previousValue ^ (aValue << aOffset)) & aMask);
+	}
+
+	return previousValue;
+}
+
+/// \returns Previous value
+static inline uint16_t setEpxrEpType(uint8_t aEndpoint, uint8_t aType)
+{
+	volatile uint16_t *epxr = getEpxr(aEndpoint);
+	uint16_t ret = *epxr;
+
+	*epxr = (ret & (USB_EP0R_EA | USB_EP0R_EP_KIND)) | aType << USB_EP0R_EP_TYPE_Pos;
+
+	return ret;
+}
+
+/// \brief Set bits that are "write-1-toggle" mode
+static inline uint16_t setEpxrToggle(uint8_t aEndpoint, uint16_t aValue, uint32_t aOffset, uint32_t aMask)
+{
+	volatile uint16_t *epxr = getEpxr(aEndpoint);
+	uint16_t ret = *epxr;
+
+	*epxr = (ret & USBAD_USB_EPXR_NON_TOGGLE_BITS) | ((ret ^ (aValue << aOffset)) & aMask);
+
+	return ret;
+}
+
+static inline uint16_t setEpxrStatTx(uint8_t aEndpoint, uint32_t aValue)
+{
+	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_STAT_TX_Pos, USB_EP0R_STAT_TX_Msk);
+}
+
+static inline uint16_t setEpxrStatRx(uint8_t aEndpoint, uint32_t aValue)
+{
+	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_STAT_RX_Pos, USB_EP0R_STAT_RX_Msk);
 }
 
 #endif  // SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_

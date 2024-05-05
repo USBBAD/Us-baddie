@@ -51,7 +51,7 @@ int main(void)
 	memoryInitialize();
 	sToken = usDebugRegisterToken("application");
 	targetInitialize();
-	uartConfigure(1, 115200);
+	uartConfigure(1, 921600);
 
 	// Configure logging
 	usvprintfSetPuts(uartPuts);

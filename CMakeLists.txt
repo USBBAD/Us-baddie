@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 set(CMAKE_C_STANDARD 99)
-project(usbad)
+set(CMAKE_CXX_STANDARD 14)
+project(usbad ASM C CXX)
 enable_language(ASM)
 
 # CMake included files

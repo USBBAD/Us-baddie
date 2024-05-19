@@ -4,41 +4,23 @@
 // Created on: 15 February, 2024
 //     Author: Dmitry Murashov
 //
-// This file has been to a significant extent derived from CMSIS USB Device
-// driver template. Here is its header:
-//
-// Copyright (c) 2013-2020 Arm Limited. All rights reserved.
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-// Licensed under the Apache License, Version 2.0 (the License); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an AS IS BASIS, WITHOUT
-// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-//
 
 #ifndef SRC_TARGET_STM32F103C6_SRC_USB_C_
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
 #include "arm/stm32f1/stm32f1_usb.h"
+#include "hal/usb.h"
 #include "utility/debug.h"
 #include "utility/fifo.h"
 #include "utility/ushelp.h"
 #include "utility/usvprintf.h"
 #include <stm32f103x6.h>
-#include <Driver_USBD.h>
 #include <stddef.h>
 #include <stdint.h>
 
-static int sDebugToken = -1;
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 /// \def Size of endpoint description table: 4 2-byte words for maximum 8 endpoints
 /// XXX: is it possible to use buffer table space, if not all EPs are present?
@@ -56,6 +38,10 @@ static int sDebugToken = -1;
 #define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (10)
 #define USBAD_USB_MAX_ENDPOINTS (1)
 
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
 /// \enum Stores possible values for EPnR_STAT_<RX|TX> bits.
 /// It does not matter whether "TX" or "RX" is being set,
 /// as the values are the same.
@@ -69,13 +55,33 @@ enum UsbEpxrStatRxTx {
 struct I32Context {
 	const char *title;
 	uint32_t value;
-} sI32Context[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
+};
 
-static void configureEndpointBdt(volatile USB_TypeDef *aUsb, uint8_t aEndpointNumber, uint8_t aBufferSize);
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
 static void debugPrintUsbBdtContent(const void *aArg);
 static void debugPrintI32Context(const void *aContext);
+void USB_LP_CAN1_RX0_IRQHandler();
+void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *, const void *aBuffer, size_t aSize);
 
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+struct I32Context  sI32Context[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
 static Fifo sI32ContextFifo;
+static int sDebugToken = -1;
+struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
+struct HalUsbDeviceDriver sEp0UsbDriver = {
+	.priv = 0,
+	.onRx = ep0OnRx,
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 static void debugPrintI32Context(const void *a)
 {
@@ -135,6 +141,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	}
 }
 
+void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
+	size_t aSize)
+{
+}
+
 static void debugPrintUsbBdtContent(const void *aArg)
 {
 	uint16_t usbBdtContent[64] = {0};
@@ -143,6 +154,10 @@ static void debugPrintUsbBdtContent(const void *aArg)
 	usDebugPrintU16Array(usbBdtContent, 64);
 	usvprintf("\r\n");
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 void usbInitialize()
 {
@@ -181,6 +196,15 @@ void usbInitialize()
 	fifoInitialize(&sI32ContextFifo, &sI32Context, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct I32Context));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
 	usDebugAddTask(sDebugToken, debugPrintUsbBdtContent, 0);
+	halUsbDeviceRegisterDriver(&sEp0UsbDriver, 0);
+}
+
+void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint)
+{
+	while (aEndpoint > 7 || !aDriver->onRx) {
+	}
+
+	sHalUsbDrivers[aEndpoint] = aDriver;
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

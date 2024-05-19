@@ -75,7 +75,7 @@ static void configureEndpointBdt(volatile USB_TypeDef *aUsb, uint8_t aEndpointNu
 static void debugPrintUsbBdtContent(const void *aArg);
 static void debugPrintI32Context(const void *aContext);
 
-static Fifo sI32ContextFifo;;
+static Fifo sI32ContextFifo;
 
 static void debugPrintI32Context(const void *a)
 {

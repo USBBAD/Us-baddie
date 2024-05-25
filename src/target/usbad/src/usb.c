@@ -43,25 +43,17 @@
  * Private Types
  ****************************************************************************/
 
-struct I32Context {
-	const char *title;
-	uint32_t value;
-};
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
 static void debugPrintUsbBdtContent(const void *aArg);
-static void debugPrintI32Context(const void *aContext);
 void USB_LP_CAN1_RX0_IRQHandler();
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-struct I32Context  sI32Context[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
-static Fifo sI32ContextFifo;
 static int sDebugToken = -1;
 struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
 uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
@@ -69,29 +61,6 @@ uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static void debugPrintI32Context(const void *a)
-{
-	struct I32Context *usbIsrContext;
-	(void)a;
-
-	while ((usbIsrContext = fifoPop(&sI32ContextFifo)) != 0) {
-		usvprintf("%s 0x%08X\r\n", usbIsrContext->title, usbIsrContext->value);
-	}
-}
-
-static void debugEnqueueI32Context(const char *aTitle, uint32_t aValue)
-{
-	struct I32Context *context = fifoPush(&sI32ContextFifo);
-
-	if (context) {
-		*context = (struct I32Context) {
-			.title = aTitle,
-			.value = aValue,
-		};
-		usDebugAddTask(sDebugToken, debugPrintI32Context, 0);
-	}
-}
 
 /// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
 void USB_LP_CAN1_RX0_IRQHandler()
@@ -205,7 +174,6 @@ void usbInitialize()
 
 	// FIFO for debug info
 	sDebugToken = usDebugRegisterToken("usb");
-	fifoInitialize(&sI32ContextFifo, &sI32Context, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct I32Context));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
 	usDebugAddTask(sDebugToken, debugPrintUsbBdtContent, 0);
 }

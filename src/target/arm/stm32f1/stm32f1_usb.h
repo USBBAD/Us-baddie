@@ -117,7 +117,7 @@ static inline size_t getMinInnerBdtOffset(size_t aEndpoints)
 	return 64;
 }
 
-static volatile uint16_t *getEpxr(uint8_t aEndpointNumber)
+static inline volatile uint16_t *getEpxr(uint8_t aEndpointNumber)
 {
 	return &USB->EP0R + 2 * aEndpointNumber;
 }
@@ -171,6 +171,16 @@ static inline uint16_t setEpxrStatTx(uint8_t aEndpoint, uint32_t aValue)
 static inline uint16_t setEpxrStatRx(uint8_t aEndpoint, uint32_t aValue)
 {
 	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_STAT_RX_Pos, USB_EP0R_STAT_RX_Msk);
+}
+
+static inline uint16_t getEpxAddrnRxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
+{
+	return getMinInnerBdtOffset(aMaxEndpoints) + aBufferSize * aEpx * 2;
+}
+
+static inline uint16_t getEpxAddrnTxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
+{
+	return getEpxAddrnRxOffset(aMaxEndpoints, aBufferSize, aEpx) + aBufferSize;
 }
 
 #endif  // SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_

@@ -10,6 +10,7 @@
 
 #include "arm/stm32f1/stm32f1_usb.h"
 #include "hal/usb.h"
+#include "usb_control.h"
 #include "utility/debug.h"
 #include "utility/fifo.h"
 #include "utility/ushelp.h"
@@ -42,16 +43,6 @@
  * Private Types
  ****************************************************************************/
 
-/// \enum Stores possible values for EPnR_STAT_<RX|TX> bits.
-/// It does not matter whether "TX" or "RX" is being set,
-/// as the values are the same.
-enum UsbEpxrStatRxTx {
-	UsbEpxrStatRxTxDisabled = 0b00,
-	UsbEpxrStatRxTxStall    = 0b01,
-	UsbEpxrStatRxTxNak      = 0b10,
-	UsbEpxrStatRxTxValid    = 0b11,
-};
-
 struct I32Context {
 	const char *title;
 	uint32_t value;
@@ -64,7 +55,6 @@ struct I32Context {
 static void debugPrintUsbBdtContent(const void *aArg);
 static void debugPrintI32Context(const void *aContext);
 void USB_LP_CAN1_RX0_IRQHandler();
-void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *, const void *aBuffer, size_t aSize);
 
 /****************************************************************************
  * Private Data
@@ -74,10 +64,7 @@ struct I32Context  sI32Context[USBAD_USB_ISR_CONTEXT_FIFO_SIZE] = {{0}};
 static Fifo sI32ContextFifo;
 static int sDebugToken = -1;
 struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
-struct HalUsbDeviceDriver sEp0UsbDriver = {
-	.priv = 0,
-	.onRx = ep0OnRx,
-};
+uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
 
 /****************************************************************************
  * Private Functions
@@ -111,7 +98,6 @@ void USB_LP_CAN1_RX0_IRQHandler()
 {
 	volatile USB_TypeDef *usb = USB;
 	uint16_t istr = usb->ISTR;
-	volatile uint16_t ep0r = usb->EP0R;
 	uint32_t deviceEvent = 0;
 	uint32_t endpointEvent = 0;
 	uint8_t endpointNumber = 0;
@@ -123,7 +109,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
         usb->ISTR &= ~(USB_ISTR_RESET | USB_ISTR_WKUP | USB_ISTR_SUSP);
         usb->CNTR &= ~(USB_CNTR_RESUME | USB_CNTR_FSUSP | USB_CNTR_LP_MODE | USB_CNTR_PDWN | USB_CNTR_FRES);
 
-        // TODO
+		initializeEp0UsbHalDeviceDriver();
         setEpxrEpType(0, 1);
         setEpxrStatTx(0, 1);
         setEpxrStatRx(0, 1);
@@ -135,15 +121,41 @@ void USB_LP_CAN1_RX0_IRQHandler()
 
 	if (istr & USB_ISTR_CTR) {
 		usb->ISTR &= ~(USB_ISTR_CTR);
-    	usDebugPushMessage(sDebugToken, "Holy fuck!");
+
+		uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
+		uint16_t direction = (istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos;
+		uint16_t epxr = *getEpxr(endpointId);
+
+		if (direction) {
+			// If 1, OUT (/ SETUP?) transaction happened
+			usStm32f1UsbReadBdt(&sTransactBuffer[0], USBAD_USB_BUFFER_SIZE, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS,
+				USBAD_USB_BUFFER_SIZE, endpointId));
+			// TODO: provide transaction type (SETUP, DATA0/1)
+			union HalUsbDeviceContextVariant context = {
+				.onRxIsr = {
+					.endpointId = endpointId,
+					.transactionFlags = (istr & USB_EP0R_SETUP ? HalUsbTransactionSetup : 0)
+						| (istr & USB_ISTR_DIR ? HalUsbTransactionOut : HalUsbTransactionIn)
+				},
+			};
+
+			if (context.onRxIsr.transactionFlags & HalUsbTransactionOut) {
+				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
+				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
+			} else if (context.onRxIsr.transactionFlags & HalUsbTransactionIn) {
+				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
+				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+			}
+
+			uint16_t nWordsu16;
+			getUsbCountnRx(usb, endpointId, &nWordsu16);
+			nWordsu16 &= (1 << 10) - 1;
+			sHalUsbDrivers[endpointId]->onRxIsr(sHalUsbDrivers[endpointId], &context, sTransactBuffer,
+				nWordsu16 * 2);
+		}
 
 		return;
 	}
-}
-
-void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
-	size_t aSize)
-{
 }
 
 static void debugPrintUsbBdtContent(const void *aArg)
@@ -181,8 +193,8 @@ void usbInitialize()
 	// Configure control endpoint BDT
 	setUsbCountnRx(usb, 0, (1 << 15) | (1 << 10));
 	setUsbCountnTx(usb, 0, 0);
-	setUsbAddrnRx(usb, 0, 64);
-	setUsbAddrnTx(usb, 0, 128);
+	setUsbAddrnRx(usb, 0, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, 0));
+	setUsbAddrnTx(usb, 0, getEpxAddrnTxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, 0));
 
 	// Enable USB interrupts
 	usb->CNTR =
@@ -196,12 +208,11 @@ void usbInitialize()
 	fifoInitialize(&sI32ContextFifo, &sI32Context, USBAD_USB_ISR_CONTEXT_FIFO_SIZE, sizeof(struct I32Context));
 	usDebugPushMessage(sDebugToken, "Initialization completed");
 	usDebugAddTask(sDebugToken, debugPrintUsbBdtContent, 0);
-	halUsbDeviceRegisterDriver(&sEp0UsbDriver, 0);
 }
 
 void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint)
 {
-	while (aEndpoint > 7 || !aDriver->onRx) {
+	while (aEndpoint > 7 || !aDriver->onRxIsr) {
 	}
 
 	sHalUsbDrivers[aEndpoint] = aDriver;

@@ -89,11 +89,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	}
 
 	if (istr & USB_ISTR_CTR) {
-		usb->ISTR &= ~(USB_ISTR_CTR);
-
 		uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
 		uint16_t direction = (istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos;
 		uint16_t epxr = *getEpxr(endpointId);
+
+		usb->ISTR &= ~(USB_ISTR_CTR);
 
 		if (direction) {
 			// If 1, OUT (/ SETUP?) transaction happened
@@ -108,10 +108,14 @@ void USB_LP_CAN1_RX0_IRQHandler()
 				},
 			};
 
-			if (context.onRxIsr.transactionFlags & HalUsbTransactionOut) {
+			if (istr & USB_EP0R_SETUP) {
+				context.onRxIsr.transactionFlags |= HalUsbTransactionSetup;
+			} else if (istr & USB_ISTR_DIR) {
+				context.onRxIsr.transactionFlags |=  HalUsbTransactionOut;
 				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
-			} else if (context.onRxIsr.transactionFlags & HalUsbTransactionIn) {
+			} else {
+				context.onRxIsr.transactionFlags |=  HalUsbTransactionIn;
 				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
 			}

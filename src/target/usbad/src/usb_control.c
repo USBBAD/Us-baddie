@@ -61,7 +61,7 @@ void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVarian
 	// Hanlde setup transaction
 	if (aContext->onRxIsr.transactionFlags & (HalUsbTransactionSetup)) {
 		// Unpack
-		struct SetupTransaction setupTransaction = *(struct SetupTransaction const *)aBuffer;
+		struct SetupTransaction setupTransaction = *(const struct SetupTransaction *)aBuffer;
 	}
 }
 

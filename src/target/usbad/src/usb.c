@@ -97,7 +97,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 
 		usb->ISTR &= ~(USB_ISTR_CTR);
 
-		if (istr & USB_EP0R_CTR_RX) {
+		if (epxr & USB_EP0R_CTR_RX) {
 			// Handle OUT or SETUP transactions
 			uint16_t nWordsu16;
 			union HalUsbDeviceContextVariant context = {
@@ -114,13 +114,13 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			nWordsu16 &= (1 << 10) - 1;
 
 			// Initialize context
-			if (istr & USB_EP0R_SETUP) {
+			if (epxr & USB_EP0R_SETUP) {
 				context.onRxIsr.transactionFlags |= HalUsbTransactionSetup;
 			} else {
-				context.onRxIsr.transactionFlags |=  HalUsbTransactionOut;
+				context.onRxIsr.transactionFlags |= HalUsbTransactionOut;
 			}
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
-			context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
+			context.onRxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
 
 			// Pass further handling to the driver
 			sHalUsbDrivers[endpointId]->onRxIsr(sHalUsbDrivers[endpointId], &context, sTransactBuffer,
@@ -129,7 +129,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			// Reset ISR flag
 			resetEpxrCtrRx(endpointId);
 
-		} else if (istr & USB_EP0R_CTR_TX) {
+		} else if (epxr & USB_EP0R_CTR_TX) {
 			// Handle IN transactions
 			union HalUsbDeviceContextVariant context = {
 				.onRxIsr = {
@@ -139,7 +139,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			};
 			context.onRxIsr.transactionFlags |= HalUsbTransactionIn;
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
-			context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+			context.onRxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
 
 			resetEpxrCtrTx(endpointId);
 			// TODO: notify the driver

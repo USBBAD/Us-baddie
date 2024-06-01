@@ -34,7 +34,13 @@ struct SetupTransaction {
  * Private Function Prototypes
  ****************************************************************************/
 
-void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *, const void *aBuffer, size_t aSize);
+static void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize);
+static void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize);
+static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize);
+static void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *, const void *aBuffer, size_t aSize);
 
 /****************************************************************************
  * Private Data
@@ -53,15 +59,53 @@ struct HalUsbDeviceDriver sEp0UsbDriver = {
  * Private Functions
  ****************************************************************************/
 
-void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
+static void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
+{
+	usDebugPushMessage(getDebugToken(), "Endpoint request");
+}
+
+static void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
+{
+	usDebugPushMessage(getDebugToken(), "Interface request");
+}
+
+static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
+{
+	usDebugPushMessage(getDebugToken(), "Device request");
+}
+
+static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
 	size_t aSize)
 {
-	usDebugPushMessage(getDebugToken(), "Holy fuck!");
-
-	// Hanlde setup transaction
-	if (aContext->onRxIsr.transactionFlags & (HalUsbTransactionSetup)) {
-		// Unpack
-		struct SetupTransaction setupTransaction = *(const struct SetupTransaction *)aBuffer;
+	switch (aContext->onRxIsr.transactionFlags & (HalUsbTransactionIn | HalUsbTransactionOut | HalUsbTransactionSetup)) {
+		case HalUsbTransactionSetup: {
+			usDebugPushMessage(getDebugToken(), "SETUP transaction");
+			// Hanlde setup transaction
+			struct SetupTransaction setupTransaction = *(const struct SetupTransaction *)aBuffer;
+			switch (setupTransaction.bmRequestType & (UsbBmRequestTypeRecipientMask)) {
+				case UsbBmRequestTypeRecipientEndpoint:
+					handleSetupBmRequestEndpoint(aDriver, aContext, &setupTransaction, aBuffer, aSize);
+					break;
+				case UsbBmRequestTypeRecipientInterface:
+					handleSetupBmRequestInterface(aDriver, aContext, &setupTransaction, aBuffer, aSize);
+					break;
+				case UsbBmRequestTypeRecipientDevice:
+					handleSetupBmRequestDevice(aDriver, aContext, &setupTransaction, aBuffer, aSize);
+					break;
+			}
+			break;
+		}
+		case HalUsbTransactionIn: {
+			usDebugPushMessage(getDebugToken(), "IN transaction");
+			break;
+		}
+		case HalUsbTransactionOut: {
+			usDebugPushMessage(getDebugToken(), "OUT transaction");
+			break;
+		}
 	}
 }
 

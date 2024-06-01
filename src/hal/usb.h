@@ -25,6 +25,13 @@
 
 #ifndef __ASSEMBLY__
 
+enum {
+	UsbBmRequestTypeRecipientMask = 0b1111,
+	UsbBmRequestTypeRecipientDevice = 0,
+	UsbBmRequestTypeRecipientInterface = 1,
+	UsbBmRequestTypeRecipientEndpoint = 2,
+};
+
 typedef enum {
 	HalUsbTransactionData1 = 1 << 0,  ///< If set, DATA1. Else DATA0
 	HalUsbTransactionSetup = 1 << 1,  ///< If set, SETUP transaction is taking place

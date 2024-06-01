@@ -30,6 +30,23 @@ struct SetupTransaction {
 	uint16_t wLength;
 } __attribute__((packed));
 
+struct UsbDeviceDescriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdUsb;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bMaxPacketSize;
+	uint16_t idVendor;
+	uint16_t idProduct;
+	uint16_t bcdDevice;
+	uint8_t iManufacturer;
+	uint8_t iProduct;
+	uint8_t iSerialNumber;
+	uint8_t bNumConfigurations;
+} __attribute__((packed));
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -49,6 +66,23 @@ static void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVarian
 struct HalUsbDeviceDriver sEp0UsbDriver = {
 	.priv = 0,
 	.onRxIsr = ep0OnRx,
+};
+
+static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
+	.bLength = 18,
+	.bDescriptorType = 1,
+	.bcdUsb = 0x0200, // TODO
+	.bDeviceClass = 0x00, // TODO
+	.bDeviceSubClass = 0x00, // TODO
+	.bDeviceProtocol = 0x00, // TODO
+	.bMaxPacketSize = 64,
+	.idVendor = 0x0483, // TODO
+	.idProduct = 0x5722, // TODO
+	.bcdDevice = 1,
+	.iManufacturer = 0,
+	.iProduct = 0,
+	.iSerialNumber = 0,
+	.bNumConfigurations = 1,
 };
 
 /****************************************************************************
@@ -75,6 +109,19 @@ static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
 	usDebugPushMessage(getDebugToken(), "Device request");
+
+	switch (aSetupTransaction->bRequest) {
+		case UsbBRequestSetAddress:
+			// TODO:
+			break;
+		case UsbBRequestGetDescriptor:
+			halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, sizeof(sUsbDeviceDescriptor), 1);
+			break;
+		default:
+			debugRegdumpEnqueueI32Context("Unhandled bRequest", aSetupTransaction->bRequest);
+
+			break;
+	}
 }
 
 static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,

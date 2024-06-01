@@ -209,4 +209,26 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 	sHalUsbDrivers[aEndpoint] = aDriver;
 }
 
+void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, const void *aBuffer, size_t aSize,
+	int aIsData1)
+{
+	// Write into buffer
+	uint16_t txBufferAddress = getEpxAddrnTxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, aEndpoint);
+	usStm32f1UsbWriteBdt(aBuffer, aSize / 2, txBufferAddress);
+	// Padding
+	if (aSize % 2) {
+		uint16_t lastWord = ((const uint8_t *)aBuffer)[0];
+		usStm32f1UsbWriteBdt(&lastWord, 1, txBufferAddress + aSize / 2);
+	}
+
+	// Set counter
+	setUsbCountnTx(USB, aEndpoint, aSize);
+
+	// DATAx, set the correct type
+	setEpxrDtogTx(aEndpoint, aIsData1 ? 1 : 0);
+
+	// Enable TX transaction
+	setEpxrStatTx(aEndpoint, 3 /*valid*/);
+}
+
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

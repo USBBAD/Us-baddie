@@ -25,11 +25,22 @@
 
 #ifndef __ASSEMBLY__
 
+// USB SETUP transaction constants
 enum {
+	// bmRequestType field values
 	UsbBmRequestTypeRecipientMask = 0b1111,
 	UsbBmRequestTypeRecipientDevice = 0,
 	UsbBmRequestTypeRecipientInterface = 1,
 	UsbBmRequestTypeRecipientEndpoint = 2,
+	// bRequest field values
+	UsbBRequestGetStatus = 0,
+	UsbBRequestClearFeature = 1,
+	UsbBRequestSetFeature = 3,
+	UsbBRequestSetAddress = 5,
+	UsbBRequestGetDescriptor = 6,
+	UsbBRequestSetDescriptor = 7,
+	UsbBRequestGetConfiguration = 8,
+	UsbBRequestSetConfiguration = 9,
 };
 
 typedef enum {
@@ -88,8 +99,8 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 /// \brief Puts a certain number of bytes into USB TX. MAY
 /// involve delayed sending. To be implemented on a particular
 /// platform. WILL be called from ISR
-void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
-	const void *aBuffer, size_t aSize);
+void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, const void *aBuffer, size_t aSize,
+	int aIsData1);
 
 #undef EXTERN
 #ifdef __cplusplus

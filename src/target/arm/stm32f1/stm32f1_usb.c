@@ -27,7 +27,7 @@ void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_
 	}
 }
 
-void usStm32f1UsbWriteBdt(uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
+void usStm32f1UsbWriteBdt(const uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
 {
 	uint32_t *currentOffset = bdtOffset2AhbOffset(aUsbBdtInnerOffset);
 

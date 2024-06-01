@@ -58,7 +58,7 @@ void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_
 /// \brief Writes `aInBuffer` into USB BDT memory
 /// \pre No fool protectione is used. The size of BDT must be accounted for
 /// \details Quite similar to `usStm32UsbReadBdt`. Refer to its description
-void usStm32f1UsbWriteBdt(uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset);
+void usStm32f1UsbWriteBdt(const uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset);
 
 /****************************************************************************
  * Inline Functions
@@ -238,11 +238,13 @@ static inline uint16_t resetEpxrCtrTx(uint16_t aEndpoint)
 	return setEpxrNonToggle(aEndpoint, 0, USB_EP0R_CTR_TX_Pos, USB_EP0R_CTR_TX_Msk);
 }
 
+/// \brief Returns address of RX buffer
 static inline uint16_t getEpxAddrnRxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
 {
 	return getMinInnerBdtOffset(aMaxEndpoints) + aBufferSize * aEpx * 2;
 }
 
+/// \brief Returns address of TX buffer
 static inline uint16_t getEpxAddrnTxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
 {
 	return getEpxAddrnRxOffset(aMaxEndpoints, aBufferSize, aEpx) + aBufferSize;

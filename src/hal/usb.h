@@ -88,11 +88,8 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 /// \brief Puts a certain number of bytes into USB TX. MAY
 /// involve delayed sending. To be implemented on a particular
 /// platform. WILL be called from ISR
-void halUsbDeviceTxIsr(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const void *aBuffer, size_t aSize);
-
-/// \param aData0 expect the next data package to be DATA0
-void halUsbDeviceRxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, int aData0);
 
 #undef EXTERN
 #ifdef __cplusplus

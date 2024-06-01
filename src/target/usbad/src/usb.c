@@ -202,6 +202,7 @@ void usbInitialize()
 
 void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint)
 {
+	// Debug trap
 	while (aEndpoint > 7 || !aDriver->onRxIsr) {
 	}
 

@@ -4,16 +4,48 @@
 // Created on: March 28, 2024
 //     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
 //
+// A bunch of inline boilerplate reducers
+//
 
 #ifndef SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
 #define SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_
+
+/****************************************************************************
+* Included Files
+****************************************************************************/
 
 #include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>
 
+/****************************************************************************
+* Pre-processor Definitions
+****************************************************************************/
+
 /// \var Certain bits are toggled when written 1, others are just regular rw, or rc_w0
 #define USBAD_USB_EPXR_NON_TOGGLE_BITS (USB_EP0R_EP_TYPE | USB_EP0R_EP_KIND | USB_EP0R_EA)
+
+/****************************************************************************
+* Public Types
+****************************************************************************/
+
+#ifndef __ASSEMBLY__
+
+/****************************************************************************
+* Public Data
+****************************************************************************/
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
+/****************************************************************************
+* Public Function Prototypes
+****************************************************************************/
 
 /// \brief API for interfacing w/ STM's USB BDT (RM0008 Rev 21 p 648)
 /// \pre aOutBuffer is supposed to be able to accomodate `aReadSequenceLength`
@@ -27,6 +59,10 @@ void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_
 /// \pre No fool protectione is used. The size of BDT must be accounted for
 /// \details Quite similar to `usStm32UsbReadBdt`. Refer to its description
 void usStm32f1UsbWriteBdt(uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset);
+
+/****************************************************************************
+ * Inline Functions
+ ****************************************************************************/
 
 /// \param `aWriteSequenceLength` -- in half-words
 static inline void usStm32f1UsbSetBdt(uint16_t aValue, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
@@ -152,7 +188,7 @@ static inline uint16_t setEpxrEpType(uint8_t aEndpoint, uint8_t aType)
 	return ret;
 }
 
-/// \brief Set bits that are "write-1-toggle" mode
+/// \brief EPxR has both set-toggle and set-write mode bits. This one handles the former.
 static inline uint16_t setEpxrToggle(uint8_t aEndpoint, uint16_t aValue, uint32_t aOffset, uint32_t aMask)
 {
 	volatile uint16_t *epxr = getEpxr(aEndpoint);
@@ -161,6 +197,15 @@ static inline uint16_t setEpxrToggle(uint8_t aEndpoint, uint16_t aValue, uint32_
 	*epxr = (ret & USBAD_USB_EPXR_NON_TOGGLE_BITS) | ((ret ^ (aValue << aOffset)) & aMask);
 
 	return ret;
+}
+
+/// \brief EPxR has both set-toggle and set-write mode bits. This one handles the latter.
+static inline uint16_t setEpxrNonToggle(uint8_t aEndpoint, uint32_t aValue, uint32_t aOffset, uint32_t aMask)
+{
+	volatile uint16_t epxr = *getEpxr(aEndpoint);
+	*getEpxr(aEndpoint) = (epxr & USBAD_USB_EPXR_NON_TOGGLE_BITS & ~aMask) | (aValue << aOffset);
+
+	return epxr;
 }
 
 static inline uint16_t setEpxrStatTx(uint8_t aEndpoint, uint32_t aValue)
@@ -173,6 +218,26 @@ static inline uint16_t setEpxrStatRx(uint8_t aEndpoint, uint32_t aValue)
 	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_STAT_RX_Pos, USB_EP0R_STAT_RX_Msk);
 }
 
+static inline uint16_t setEpxrDtogTx(uint8_t aEndpoint, uint32_t aValue)
+{
+	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_DTOG_TX_Pos, USB_EP0R_DTOG_TX_Msk);
+}
+
+static inline uint16_t setEpxrDtogRx(uint8_t aEndpoint, uint32_t aValue)
+{
+	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_DTOG_RX_Pos, USB_EP0R_DTOG_RX_Msk);
+}
+
+static inline uint16_t resetEpxrCtrRx(uint16_t aEndpoint)
+{
+	return setEpxrNonToggle(aEndpoint, 0, USB_EP0R_CTR_RX_Pos, USB_EP0R_CTR_RX_Msk);
+}
+
+static inline uint16_t resetEpxrCtrTx(uint16_t aEndpoint)
+{
+	return setEpxrNonToggle(aEndpoint, 0, USB_EP0R_CTR_TX_Pos, USB_EP0R_CTR_TX_Msk);
+}
+
 static inline uint16_t getEpxAddrnRxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
 {
 	return getMinInnerBdtOffset(aMaxEndpoints) + aBufferSize * aEpx * 2;
@@ -182,5 +247,12 @@ static inline uint16_t getEpxAddrnTxOffset(uint8_t aMaxEndpoints, uint16_t aBuff
 {
 	return getEpxAddrnRxOffset(aMaxEndpoints, aBufferSize, aEpx) + aBufferSize;
 }
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+#endif  /* __ASSEMBLY__ */
 
 #endif  // SRC_COMMON_TARGET_ARM_STM32_STM32_USB_H_

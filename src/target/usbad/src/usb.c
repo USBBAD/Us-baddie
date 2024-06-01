@@ -66,7 +66,7 @@ uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 	volatile USB_TypeDef *usb = USB;
-	uint16_t istr = usb->ISTR;
+	volatile uint16_t istr = usb->ISTR;
 	uint32_t deviceEvent = 0;
 	uint32_t endpointEvent = 0;
 	uint8_t endpointNumber = 0;
@@ -80,8 +80,10 @@ void USB_LP_CAN1_RX0_IRQHandler()
 
 		initializeEp0UsbHalDeviceDriver();
         setEpxrEpType(0, 1);
-        setEpxrStatTx(0, 1);
-        setEpxrStatRx(0, 1);
+        setEpxrDtogTx(0, 1);
+        setEpxrDtogTx(0, 0);
+        setEpxrStatTx(0, 2);
+        setEpxrStatRx(0, 2);
 
         usb->DADDR |= USB_DADDR_EF;
 
@@ -92,15 +94,12 @@ void USB_LP_CAN1_RX0_IRQHandler()
 		uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
 		uint16_t direction = (istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos;
 		uint16_t epxr = *getEpxr(endpointId);
-		uint16_t nWordsu16;
 
 		usb->ISTR &= ~(USB_ISTR_CTR);
 
-		if (direction) {
-			// If 1, OUT (/ SETUP?) transaction happened
-			usStm32f1UsbReadBdt(&sTransactBuffer[0], USBAD_USB_BUFFER_SIZE, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS,
-				USBAD_USB_BUFFER_SIZE, endpointId));
-			// TODO: provide transaction type (SETUP, DATA0/1)
+		if (istr & USB_EP0R_CTR_RX) {
+			// Handle OUT or SETUP transactions
+			uint16_t nWordsu16;
 			union HalUsbDeviceContextVariant context = {
 				.onRxIsr = {
 					.endpointId = endpointId,
@@ -108,22 +107,42 @@ void USB_LP_CAN1_RX0_IRQHandler()
 				},
 			};
 
-			if (istr & USB_EP0R_SETUP) {
-				context.onRxIsr.transactionFlags |= HalUsbTransactionSetup;
-			} else if (istr & USB_EP0R_CTR_RX) {
-				context.onRxIsr.transactionFlags |=  HalUsbTransactionOut;
-				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
-				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
-			} else if (istr & USB_EP0R_CTR_TX) {
-				context.onRxIsr.transactionFlags |=  HalUsbTransactionIn;
-				// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
-				context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
-			}
-
+			// Read out buffer, and its length
+			usStm32f1UsbReadBdt(&sTransactBuffer[0], USBAD_USB_BUFFER_SIZE, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS,
+				USBAD_USB_BUFFER_SIZE, endpointId));
 			getUsbCountnRx(usb, endpointId, &nWordsu16);
 			nWordsu16 &= (1 << 10) - 1;
+
+			// Initialize context
+			if (istr & USB_EP0R_SETUP) {
+				context.onRxIsr.transactionFlags |= HalUsbTransactionSetup;
+			} else {
+				context.onRxIsr.transactionFlags |=  HalUsbTransactionOut;
+			}
+			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
+			context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
+
+			// Pass further handling to the driver
 			sHalUsbDrivers[endpointId]->onRxIsr(sHalUsbDrivers[endpointId], &context, sTransactBuffer,
 				nWordsu16 * 2);
+
+			// Reset ISR flag
+			resetEpxrCtrRx(endpointId);
+
+		} else if (istr & USB_EP0R_CTR_TX) {
+			// Handle IN transactions
+			union HalUsbDeviceContextVariant context = {
+				.onRxIsr = {
+					.endpointId = endpointId,
+					.transactionFlags = 0,
+				},
+			};
+			context.onRxIsr.transactionFlags |= HalUsbTransactionIn;
+			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
+			context.onRxIsr.transactionFlags |= (istr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+
+			resetEpxrCtrTx(endpointId);
+			// TODO: notify the driver
 		}
 
 		return;

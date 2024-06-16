@@ -115,7 +115,7 @@ static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union
 			// TODO:
 			break;
 		case UsbBRequestGetDescriptor:
-			halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, sizeof(sUsbDeviceDescriptor), 1);
+			halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
 			break;
 		default:
 			debugRegdumpEnqueueI32Context("Unhandled bRequest", aSetupTransaction->bRequest);

@@ -14,6 +14,7 @@
 * Included Files
 ****************************************************************************/
 
+#include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>

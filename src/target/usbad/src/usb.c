@@ -8,36 +8,41 @@
 #ifndef SRC_TARGET_STM32F103C6_SRC_USB_C_
 #define SRC_TARGET_STM32F103C6_SRC_USB_C_
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS (1)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP2_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP3_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP4_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP5_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP6_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP7_BUFFER_SIZE (64)
+
+#define USBAD_USB_BUFFER_SIZE USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
+#define USBAD_USB_MAX_ENDPOINTS USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS
+
+#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (4)
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
+
 #include "arm/stm32f1/stm32f1_usb.h"
+#include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include "hal/usb.h"
 #include "usb_control.h"
 #include "utility/debug.h"
+#include "utility/debug_regdump.h"
 #include "utility/fifo.h"
 #include "utility/ushelp.h"
 #include "utility/usvprintf.h"
 #include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/// \def Size of endpoint description table: 4 2-byte words for maximum 8 endpoints
-/// XXX: is it possible to use buffer table space, if not all EPs are present?
-#define BUFFER_DESCRIPTOR_TABLE_SIZE (4 * 2 * 8)
-
-/// \def Use "large" block size mapping RM0008 Rev 21 p 651
-#define USBAD_USB_COUNTX_BLSIZE (1 << 15)
-
-/// \def Use 64 bytes for buffer size
-#define USBAD_USB_COUNTX_64_BYTES ((1 << 10) | USBAD_USB_COUNTX_BLSIZE)
-
-#define USBAD_USB_BUFFER_SIZE (64)
-#define USB_EPXR_STAT_RX_VALID (0b11)
-#define USB_EPXR_EP_TYPE_CONTROL (0b11)
-#define USBAD_USB_ISR_CONTEXT_FIFO_SIZE (10)
-#define USBAD_USB_MAX_ENDPOINTS (1)
 
 /****************************************************************************
  * Private Types
@@ -57,6 +62,10 @@ void USB_LP_CAN1_RX0_IRQHandler();
 static int sDebugToken = -1;
 struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
 uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -166,6 +175,9 @@ static void debugPrintUsbBdtContent(const void *aArg)
 
 void usbInitialize()
 {
+	// FIFO for debug info
+	debugRegdumpInitialize("usb");
+
 	volatile USB_TypeDef *usb = USB;
 	volatile RCC_TypeDef *rcc = RCC;
 
@@ -181,7 +193,7 @@ void usbInitialize()
 	usb->DADDR = 0;
 	usb->BTABLE = 0;
 
-	usStm32f1UsbSetBdt(0xffff, 64, 0);
+	usStm32f1UsbSetBdt(0x0000, 64, 0);
 
 	// Configure control endpoint BDT
 	setUsbCountnRx(usb, 0, (1 << 15) | (1 << 10));
@@ -196,10 +208,8 @@ void usbInitialize()
 		// Enable reset interrupt
 		| USB_CNTR_RESETM;
 
-	// FIFO for debug info
-	sDebugToken = usDebugRegisterToken("usb");
-	usDebugPushMessage(sDebugToken, "Initialization completed");
-	usDebugAddTask(sDebugToken, debugPrintUsbBdtContent, 0);
+	usDebugPushMessage(getDebugToken(), "Initialization completed");
+	usDebugAddTask(getDebugToken(), debugPrintUsbBdtContent, 0);
 }
 
 void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint)
@@ -214,17 +224,20 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, const void *aBuffer, size_t aSize,
 	int aIsData1)
 {
-	// Write into buffer
-	uint16_t txBufferAddress = getEpxAddrnTxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, aEndpoint);
-	usStm32f1UsbWriteBdt(aBuffer, aSize / 2, txBufferAddress);
-	// Padding
+	// Copy data into USB buffer
+	volatile uint32_t *out = gUsbBdt->ep0TxBuffer;
+	size_t remaining = aSize / 2;
+	for (const uint16_t *in = aBuffer; remaining; --remaining) {
+		*out = *in;
+		++out;
+		++in;
+	}
 	if (aSize % 2) {
-		uint16_t lastWord = ((const uint8_t *)aBuffer)[0];
-		usStm32f1UsbWriteBdt(&lastWord, 1, txBufferAddress + aSize / 2);
+		*out = ((const uint8_t *)aBuffer)[aSize - 1];
 	}
 
 	// Set counter
-	setUsbCountnTx(USB, aEndpoint, aSize);
+	gUsbBdt->bdt[aEndpoint].countTx = aSize;
 
 	// DATAx, set the correct type
 	setEpxrDtogTx(aEndpoint, aIsData1 ? 1 : 0);

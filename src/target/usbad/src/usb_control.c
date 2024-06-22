@@ -87,6 +87,44 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.bNumConfigurations = 1,
 };
 
+static uint8_t sConfigDescriptor[] = {
+    // Config 0 header
+    9,                                //  Length
+    0x02,                             //  CONFIGURATION Descriptor Type
+    9 + 9 + 7 + 7, 0,                 //  TotalLength
+    1,                                //  NumInterfaces
+    1,                                //  ConfigurationValue
+    0,                                //  Configuration string not set
+    0x80,                             //  Attributes 0x80 for historical reasons
+    50,                               //  MaxPower 100mA
+
+    // interface 0
+    9,    // Length
+    0x04, // INTERFACE Descriptor Type
+    0, 0, // Interface Number, Alternate Setting
+    2,    // Num Endpoints
+    0x0A, // InterfaceClass: USB_CLASS_DATA
+    0,    // InterfaceSubClass
+    0,    // InterfaceProtocol
+    0,    // Interface string not set
+
+    // endpoint 0x1
+    7,     //  Length
+    0x05,  //  ENDPOINT Descriptor Type
+    0x01,  //  Endpoint Address: 1-OUT
+    0x02,  //  Attributes: BULK
+    64, 0, //  MaxPacketSize
+    0,     //  Interval, ignored for BULK
+
+    // endpoint 0x81
+    7,     //  Length
+    0x05,  //  ENDPOINT Descriptor Type
+    0x81,  //  Endpoint Address 1-IN
+    0x02,  //  Attributes: BULK
+    64, 0, //  MaxPacketSize
+    0,     //  Interval, ignored for BULK
+};
+
 struct {
 	int16_t address;
 } sDriverState = {-1};
@@ -99,21 +137,29 @@ struct {
  * Private Functions
  ****************************************************************************/
 
-static void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+static inline void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
 	usDebugPushMessage(getDebugToken(), "Endpoint request");
 }
 
-static void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
 	usDebugPushMessage(getDebugToken(), "Interface request");
+	switch (aSetupTransaction->bRequest) {
+		case UsbBRequestGetDescriptor: {
+			usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR intefrace");
+		}
+		default:
+			break;
+	}
 }
 
-static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
+static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
+	usDebugPushMessage(getDebugToken(), "Device request");
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestSetAddress:
 			sDriverState.address = aSetupTransaction->wValue;
@@ -121,7 +167,17 @@ static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union
 			halUsbDeviceWriteTxIsr(aDriver, 0, "", 0, 1);
 			break;
 		case UsbBRequestGetDescriptor:
-			halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
+			usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR");
+			switch (aSetupTransaction->wValue) {
+				case 0x0100:
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
+					break;
+				case 0x0200:
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sConfigDescriptor[0], aSetupTransaction->wLength, 1);
+			}
+			break;
+		case UsbBRequestGetConfiguration:
+			usDebugPushMessage(getDebugToken(), "GET_CONFIGURATION");
 			break;
 		default:
 			debugRegdumpEnqueueI32Context("Unhandled bRequest", aSetupTransaction->bRequest);

@@ -58,6 +58,7 @@ static void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, un
 static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize);
 static void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *, const void *aBuffer, size_t aSize);
+static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext);
 
 /****************************************************************************
  * Private Data
@@ -66,6 +67,7 @@ static void ep0OnRx(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVarian
 struct HalUsbDeviceDriver sEp0UsbDriver = {
 	.priv = 0,
 	.onRxIsr = ep0OnRx,
+	.onTxIsr = ep0OnTx,
 };
 
 static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
@@ -84,6 +86,10 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.iSerialNumber = 0,
 	.bNumConfigurations = 1,
 };
+
+struct {
+	int16_t address;
+} sDriverState = {-1};
 
 /****************************************************************************
  * Public Data
@@ -108,11 +114,11 @@ static void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, un
 static void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
-	usDebugPushMessage(getDebugToken(), "Device request");
-
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestSetAddress:
-			// TODO:
+			sDriverState.address = aSetupTransaction->wValue;
+			// To finish status transaction
+			halUsbDeviceWriteTxIsr(aDriver, 0, "", 0, 1);
 			break;
 		case UsbBRequestGetDescriptor:
 			halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
@@ -146,13 +152,30 @@ static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 			break;
 		}
 		case HalUsbTransactionIn: {
-			usDebugPushMessage(getDebugToken(), "IN transaction");
+			usDebugPushMessage(getDebugToken(), "IN transaction. Should have never got here!");
 			break;
 		}
 		case HalUsbTransactionOut: {
 			usDebugPushMessage(getDebugToken(), "OUT transaction");
 			break;
 		}
+	}
+}
+
+static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext)
+{
+	switch (aContext->onRxIsr.transactionFlags & (HalUsbTransactionIn | HalUsbTransactionOut | HalUsbTransactionSetup)) {
+		case HalUsbTransactionIn: {
+			usDebugPushMessage(getDebugToken(), "IN transaction");
+			if (sDriverState.address >= 0) {
+				// Status transaction has been finished, transfer is finalized, now set the device's address
+				halUsbDeviceSetAddress(aDriver, (uint8_t)sDriverState.address);
+				sDriverState.address = -1;
+			}
+			break;
+		}
+		default:
+			break;
 	}
 }
 

@@ -56,6 +56,10 @@ union HalUsbDeviceContextVariant {
 		uint8_t endpointId;
 		HalUsbTransaction transactionFlags;
 	} onRxIsr;
+	struct {
+		uint8_t endpointId;
+		HalUsbTransaction transactionFlags;
+	} onTxIsr;
 };
 
 struct HalUsbDeviceDriver {
@@ -71,6 +75,10 @@ struct HalUsbDeviceDriver {
 	/// next time
 	void (*onRxIsr)(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
 		size_t aSize);
+
+	/// \var On-successful-TX callback
+	/// \details Gets invoked whenever a TX transaction has been finished
+	void (*onTxIsr)(struct HalUsbDeviceDriver *, union HalUsbDeviceContextVariant *aContext);
 };
 
 /****************************************************************************
@@ -101,6 +109,9 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 /// platform. WILL be called from ISR
 void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, const void *aBuffer, size_t aSize,
 	int aIsData1);
+
+/// \brief Sets USB device address
+void halUsbDeviceSetAddress(struct HalUsbDeviceDriver *aDriver, uint8_t aAddress);
 
 #undef EXTERN
 #ifdef __cplusplus

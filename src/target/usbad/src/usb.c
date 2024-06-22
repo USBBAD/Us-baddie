@@ -144,7 +144,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			resetEpxrCtrTx(endpointId);
 			// Handle IN transactions
 			union HalUsbDeviceContextVariant context = {
-				.onRxIsr = {
+				.onTxIsr = {
 					.endpointId = endpointId,
 					.transactionFlags = 0,
 				},
@@ -152,6 +152,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			context.onRxIsr.transactionFlags |= HalUsbTransactionIn;
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 			context.onRxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+			sHalUsbDrivers[endpointId]->onTxIsr(sHalUsbDrivers[endpointId], &context);
 
 			// TODO: notify the driver
 		}
@@ -244,6 +245,11 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 
 	// Enable TX transaction
 	setEpxrStatTx(aEndpoint, 3 /*valid*/);
+}
+
+void halUsbDeviceSetAddress(struct HalUsbDeviceDriver *aDriver, uint8_t aAddress)
+{
+	USB->DADDR |= aAddress & ((1 << 7) - 1);
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

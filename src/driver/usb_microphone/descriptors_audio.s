@@ -1,6 +1,6 @@
 /*
-* Credit to: "anonymou8" (https://github.com/Embrobusto/stm32_usb_audio)
-* */
+ * Credit to: "anonymou8" (https://github.com/Embrobusto/stm32_usb_audio)
+ */
 
 .pushsection .rodata.descriptors
 
@@ -96,18 +96,6 @@
                     .byte   0                   @; iChannelNames
                     .byte   0                   @; iTerminal
                 CSIT_SZ = . - csi_descriptor_ac_it
-
-            @;  csi_descriptor_ac_fu:
-            @;      .byte   CSFU_SZ             @; bLength
-            @;      .byte   0x24                @; bDescriptorType      = CS_INTERFACE
-            @;      .byte   0x06                @; bDescriptorSubtype   = FEATURE_UNIT
-            @;      .byte   (2)                 @; bUnitID
-            @;      .byte   (1)                 @; bSourceID
-            @;      .byte   1                   @; bControlSize         = 1 byte (size of a bmaControls[] element)
-            @;      .byte   0x01                @; bmaControls[0]       = Mute (Master)
-            @;      .byte   0x00                @; bmaControls[1]       = None (Channel 1)
-            @;      .byte   0                   @; iFeature
-            @;  CSFU_SZ = . - csi_descriptor_ac_fu
 
                 csi_descriptor_ac_ot:           /* Output Terminal Descriptor */
                     .byte   CSOT_SZ             @; bLength

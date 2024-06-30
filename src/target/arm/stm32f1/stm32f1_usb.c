@@ -15,7 +15,7 @@
  * Included files
  ****************************************************************************/
 
-#include "target/arm/stm32f1/stm32f1_usb_bdt_layout.h"
+#include "stm32f1_usb_bdt_layout.h"
 #include <Driver_USBD.h>
 #include <stddef.h>
 #include <stdint.h>

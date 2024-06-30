@@ -251,6 +251,71 @@ static inline uint16_t getEpxAddrnTxOffset(uint8_t aMaxEndpoints, uint16_t aBuff
 	return getEpxAddrnRxOffset(aMaxEndpoints, aBufferSize, aEpx) + aBufferSize;
 }
 
+// Was not made "static" intentionally
+static inline volatile uint32_t *getBufferAhbOffset(uint8_t aIndex)
+{
+	volatile uint32_t *bufferAhbOffset[] = {
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 0
+		&gUsbBdt->ep0RxBuffer[0],
+		&gUsbBdt->ep0TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 0 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 1
+		&gUsbBdt->ep1RxBuffer[0],
+		&gUsbBdt->ep1TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 1 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 2
+		&gUsbBdt->ep2RxBuffer[0],
+		&gUsbBdt->ep2TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 2 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 3
+		&gUsbBdt->ep3RxBuffer[0],
+		&gUsbBdt->ep3TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 3 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 4
+		&gUsbBdt->ep4RxBuffer[0],
+		&gUsbBdt->ep4TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 4 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 5
+		&gUsbBdt->ep5RxBuffer[0],
+		&gUsbBdt->ep5TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 5 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 6
+		&gUsbBdt->ep6RxBuffer[0],
+		&gUsbBdt->ep6TxBuffer[0],
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 6 */
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 7
+		&gUsbBdt->ep7RxBuffer[0],
+		&gUsbBdt->ep7TxBuffer[0],
+#endif /* USBAD_STM,2F1_USB_BDT_LAYOUT_NENDPOINTS > 7 */
+	};
+	return bufferAhbOffset[aIndex];
+}
+
+static inline volatile uint32_t *getRxBufferAhbOffset(uint8_t aEndpoint)
+{
+	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS < aEndpoint) {
+		return 0;
+	}
+
+	return getBufferAhbOffset(aEndpoint * 2);
+}
+
+static inline volatile uint32_t *getTxBufferAhbOffset(uint8_t aEndpoint)
+{
+	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS < aEndpoint) {
+		return 0;
+	}
+
+	return getBufferAhbOffset(aEndpoint * 2 + 1);
+}
+
 #undef EXTERN
 #ifdef __cplusplus
 }

@@ -12,15 +12,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS (1)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS (2)
 #define USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP2_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP3_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP4_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP5_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP6_BUFFER_SIZE (64)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP7_BUFFER_SIZE (64)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE (0)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX (256)
 
 #define USBAD_USB_BUFFER_SIZE USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
 #define USBAD_USB_MAX_ENDPOINTS USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS
@@ -34,7 +29,7 @@
 #include "arm/stm32f1/stm32f1_usb.h"
 #include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include "hal/usb.h"
-#include "usb_control.h"
+#include "driver/usb_microphone/usb_control.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/fifo.h"
@@ -226,7 +221,7 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 	int aIsData1)
 {
 	// Copy data into USB buffer
-	volatile uint32_t *out = gUsbBdt->ep0TxBuffer;
+	volatile uint32_t *out = getTxBufferAhbOffset(aEndpoint);
 	size_t remaining = aSize / 2;
 	for (const uint16_t *in = aBuffer; remaining; --remaining) {
 		*out = *in;

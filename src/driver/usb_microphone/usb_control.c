@@ -87,138 +87,7 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.bNumConfigurations = 1, // One configuration
 };
 
-static const uint8_t sUsbMicrophoneConfigurationDescriptor[] = {
-	// Configuration header (standard)
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x02, // bDescriptorType CONFIGURATION descriptor.
-	0x00, 0x64, // wTotalLength Length of the total configuration block, including this descriptor, in bytes.
-	0x02, // bNumInterfaces Two interfaces.
-	0x01, // bConfigurationValue ID of this configuration.
-	0x00, // iConfiguration Unused.
-	0x80, // bmAttributes Bus Powered device, not Self Powered, no Remote wakeup capability.
-	0x0A, // MaxPower 20 mA Max. power consumption.
-
-	// USB Microphone Standard AC Interface Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x04, // bDescriptorType INTERFACE descriptor.
-	0x00, // bInterfaceNumber Index of this interface.
-	0x00, // bAlternateSetting Index of this setting.
-	0x00, // bNumEndpoints 0 endpoints.
-	0x01, // bInterfaceClass AUDIO.
-	0x01, // bInterfaceSubclass AUDIO_CONTROL.
-	0x00, // bInterfaceProtocol Unused.
-	0x00, // iInterface Unused.
-
-	// USB Microphone Class-specific AC Interface Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE.
-	0x01, // bDescriptorSubtype HEADER subtype.
-	0x01, 0x00, // bcdADC Revision of class specification - 1.0
-	0x00, 0x1E, // wTotalLength Total size of class specific descriptors.
-	0x01, // bInCollection Number of streaming interfaces.
-	0x01, // baInterfaceNr(1) AudioStreaming interface 1 belongs to this AudioControl interface.
-
-	// USB Microphone Input Terminal Descriptor
-
-	0x0C, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE.
-	0x02, // bDescriptorSubtype INPUT_TERMINAL subtype.
-	0x01, // bTerminalID ID of this Input Terminal.
-	0x02, 0x01, // wTerminalType Terminal is Microphone.
-	0x00, // bAssocTerminal No association.
-	0x01, // bNrChannels One channel.
-	0x00, 0x00, // wChannelConfig Mono sets no position bits.
-	0x00, // iChannelNames Unused.
-	0x00, // iTerminal Unused.
-
-	// USB Microphone Output Terminal Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE.
-	0x03, // bDescriptorSubtype OUTPUT_TERMINAL subtype.
-	0x02, // bTerminalID ID of this Output Terminal.
-	0x01, 0x01, // wTerminalType USB Streaming.
-	0x00, // bAssocTerminal Unused.
-	0x01, // bSourceID From Input Terminal.
-	0x00, // iTerminal Unused.
-
-	//  AudioStreaming Interface Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x04, // bDescriptorType INTERFACE descriptor.
-	0x01, // bInterfaceNumber Index of this interface.
-	0x00, // bAlternateSetting Index of this alternate setting.
-	0x00, // bNumEndpoints 0 endpoints.
-	0x01, // bInterfaceClass AUDIO.
-	0x02, // bInterfaceSubclass AUDIO_STREAMING.
-	0x00, // bInterfaceProtocol Unused.
-	0x00, // iInterface Unused.
-
-	//  Standard AS Interface Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x04, // bDescriptorType INTERFACE descriptor.
-	0x01, // bInterfaceNumber Index of this interface.
-	0x01, // bAlternateSetting Index of this alternate setting.
-	0x01, // bNumEndpoints One endpoint.
-	0x01, // bInterfaceClass AUDIO.
-	0x02, // bInterfaceSubclass AUDIO_STREAMING.
-	0x00, // bInterfaceProtocol Unused.
-	0x00, // iInterface Unused.
-
-	// Class-specific AS General Interface Descriptor
-
-	0x07, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE descriptor.
-	0x01, // bDescriptorSubtype GENERAL subtype.
-	0x02, // bTerminalLink Unit ID of the Output Terminal.
-	0x01, // bDelay Interface delay.
-	0x00, 0x01, // wFormatTag PCM Format.
-
-	//  USB Microphone Type I Format Type Descriptor
-
-	0x0B, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE descriptor.
-	0x02, // bDescriptorSubtype FORMAT_TYPE subtype.
-	0x01, // bFormatType FORMAT_TYPE_I.
-	0x01, // bNrChannels One channel.
-	0x02, // bSubFrameSize Two bytes per audio subframe.
-	0x10, // bBitResolution 16 bits per sample.
-	0x01, // bSamFreqType One frequency supported.
-	0x00, 0x1F, 0x40, // tSamFreq 8000Hz.
-
-	// Standard Endpoint Descriptor
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x24, // bDescriptorType CS_INTERFACE.
-	0x03, // bDescriptorSubtype OUTPUT_TERMINAL subtype.
-	0x02, // bTerminalID ID of this Output Terminal.
-	0x01, 0x01, // wTerminalType USB Streaming.
-	0x00, // bAssocTerminal Unused.
-	0x01, // bSourceID From Input Terminal.
-	0x00, // iTerminal Unused.
-
-	0x09, // bLength Size of this descriptor, in bytes.
-	0x05, // bDescriptorType ENDPOINT descriptor.
-	0x81, // bEndpointAddress IN Endpoint 1.
-	0x01, // bmAttributes Isochronous, not shared.
-	0x00, 0x10, // wMaxPacketSize 16 bytes per packet.
-	0x01, // bInterval One packet per frame.
-	0x00, // bRefresh Unused.
-	0x00, // bSynchAddress Unused.
-
-	// USB Microphone Class-specific Isoc. Audio Data Endpoint Descriptor
-
-	0x07, // bLength Size of this descriptor, in bytes.
-	0x25, // bDescriptorType CS_ENDPOINT descriptor
-	0x01, // bDescriptorSubtype GENERAL subtype.
-	0x00, // bmAttributes No sampling frequency control, no pitch control, no packet padding.
-	0x00, // bLockDelayUnits Unused.
-	0x00, 0x00, // wLockDelay Unused.
-};
+extern const uint8_t config_descriptor[];
 
 struct {
 	int16_t address;
@@ -268,7 +137,7 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
 					break;
 				case 0x0200:
-					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbMicrophoneConfigurationDescriptor[0],
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0],
 						aSetupTransaction->wLength, 1);
 			}
 			break;

@@ -1,19 +1,21 @@
-file(GLOB_RECURSE COMMON_SOURCES
-		"src/driver/*.c"
-		"src/hal/*.c"
-		"src/hal/*.cpp"
-		"src/utility/*.c"
-		"src/utility/*.cpp")
 file(GLOB_RECURSE TARGET_SOURCES
-		"target/usbad/src/*.c"
-		"target/usbad/src/*.s"
-		"target/arm/stm32f1/*.c"
-		"application/default/*.c"
-		"target/usbad/src/*.cpp")
+		"src/*.c"
+		"src/utility/*.c"
+		"src/application/*.c"
+		"src/application/default/*.c"
+		"src/target/*.c"
+		"src/target/arm/*.c"
+		"src/target/arm/stm32f1/*.c"
+		"src/target/usbad/*.c"
+		"src/target/usbad/src/*.c"
+		"src/driver/*.c"
+		"src/driver/usb_microphone/*.c"
+		"src/driver/usb_microphone/*.s"
+		"src/hal/*.c"
+)
 add_executable(application
 		${COMMON_SOURCES}
 		${TARGET_SOURCES})
-set(US_TARGET_INCLUDE_DIRECTORIES "target/usbad/src" "application/default" "target")
 target_include_directories(application PUBLIC 
 		"src/target/usbad/src"
 		"src/application/default"

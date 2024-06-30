@@ -11,10 +11,7 @@ OBJCOPY = arm-none-eabi-objcopy
 
 main: build
 
-config.cmake:
-	find ./cmake/config -type f | fzf | xargs -I {} ln -s {} config.cmake
-
-build: config.cmake
+build: 
 	mkdir -p build  \
 		&& cd build \
 		&& cmake .. \

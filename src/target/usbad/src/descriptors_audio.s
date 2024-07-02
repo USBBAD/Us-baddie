@@ -2,8 +2,6 @@
  * Credit to: "anonymou8" (https://github.com/Embrobusto/stm32_usb_audio)
  */
 
-.pushsection .rodata.descriptors
-
 /*************************************************************************************/
 /* Symbols */
 
@@ -25,8 +23,10 @@
 /*************************************************************************************/
 /* Device descriptor */
 
-    .align 1
-
+.global device_descriptor
+.section .text.device_descriptor
+.type device_descriptor, %object /* Data object */
+.align 1
     device_descriptor:
         .byte       DD_SZ               @; bLength
         .byte       DESC_TYPE_DEVICE    @; bDescriptorType
@@ -48,8 +48,11 @@
 /*************************************************************************************/
 /* Config descriptor */
 
-    .align 1
 
+.global config_descriptor
+.section .text.config_descriptor
+.type config_descriptor, %object /* Data object */
+    .align 1
     config_descriptor:              /* Configuration Descriptor */
         .byte   CD_SZ               @; bLength
         .byte   DESC_TYPE_CONFIG    @; bDescriptorType
@@ -219,4 +222,3 @@
 /*************************************************************************************/
 
 .align 1
-.popsection

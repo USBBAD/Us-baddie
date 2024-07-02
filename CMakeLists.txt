@@ -10,13 +10,7 @@ list(APPEND CMAKE_MODULE_PATH
 		${CMAKE_CURRENT_SOURCE_DIR}/cmake
 		${CMAKE_CURRENT_SOURCE_DIR}/cmake/config)
 
-# Apply configuration
-#include(config)
-
 # Build libraries
 add_subdirectory(lib)
 
 include(TargetUsbad)
-
-# Build application
-#add_subdirectory(src)

@@ -74,9 +74,9 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.bLength = 0x12,
 	.bDescriptorType = 1, // Device descriptor
 	.bcdUsb = 0x0200, // TODO: I use an example from USB Audio specs, and it uses USB 1.0 The 1.0 is also limited to 8 byte packages. However, the spec recommends adhering to USB 2.0
-	.bDeviceClass = 0x00, // TODO
-	.bDeviceSubClass = 0x00, // TODO
-	.bDeviceProtocol = 0x00, // TODO
+	.bDeviceClass = 0x00, // Defined at interface level
+	.bDeviceSubClass = 0x00, // Defined at interface level
+	.bDeviceProtocol = 0x00, // Defined at interface level
 	.bMaxPacketSize = 64,
 	.idVendor = 0x0483, // TODO
 	.idProduct = 0x5722, // TODO
@@ -87,7 +87,9 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.bNumConfigurations = 1, // One configuration
 };
 
-extern const uint8_t config_descriptor[];
+extern uint8_t device_descriptor[];
+extern uint8_t config_descriptor[];
+extern uint8_t *string_descriptor[];
 
 struct {
 	int16_t address;

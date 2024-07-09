@@ -207,6 +207,8 @@
 
     .align 1
 
+.global string_descriptor
+.section .text.string_descriptor
     string_descriptor:
         .word  sd0_Lang
         .word  sd1_Manu
@@ -215,8 +217,8 @@
     LANG_EN_US = 0x0409
 
     StrDesc  sd0_Lang,  LANG_EN_US, is_lang=1
-    StrDesc  sd1_Manu,  "WTF"
-    StrDesc  sd2_Prod,  "Prod"
+    StrDesc  sd1_Manu,  "DM digital"
+    StrDesc  sd2_Prod,  "Open SW/HW USB mic. v0.1"
 
 
 /*************************************************************************************/

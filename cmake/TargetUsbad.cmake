@@ -33,10 +33,8 @@ file(GLOB_RECURSE COMMON_SOURCES
 		"src/utility/*.c"
 		"src/utility/*.cpp"
 		)
-file(GLOB_RECURSE TARGET_SOURCES)
 add_executable(application
-		${COMMON_SOURCES}
-		${TARGET_SOURCES})
+		${COMMON_SOURCES})
 target_include_directories(application PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/src
 		${US_TARGET_INCLUDE_DIRECTORIES})

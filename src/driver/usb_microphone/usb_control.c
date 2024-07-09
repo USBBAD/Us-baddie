@@ -87,7 +87,6 @@ static struct UsbDeviceDescriptor sUsbDeviceDescriptor = {
 	.bNumConfigurations = 1, // One configuration
 };
 
-extern uint8_t device_descriptor[];
 extern uint8_t config_descriptor[];
 extern uint8_t *string_descriptor[];
 
@@ -132,17 +131,41 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 			// To finish status transaction
 			halUsbDeviceWriteTxIsr(aDriver, 0, "", 0, 1);
 			break;
-		case UsbBRequestGetDescriptor:
-			usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR");
-			switch (aSetupTransaction->wValue) {
-				case 0x0100:
+		case UsbBRequestGetDescriptor: {
+			const uint16_t descriptorType = (aSetupTransaction->wValue & 0xFF00) >> 8;
+			const uint16_t descriptorIndex = aSetupTransaction->wValue & 0xFF;
+			switch (descriptorType) {
+				case 1:
+					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR device");
 					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
 					break;
-				case 0x0200:
-					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0],
-						aSetupTransaction->wLength, 1);
+				case 2:
+					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR config");
+					size_t descriptorLength = config_descriptor[0];
+					if (aSetupTransaction->wLength < descriptorLength) {
+						descriptorLength = aSetupTransaction->wLength;
+					}
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0], descriptorLength, 1);
+					break;
+				case 3: {
+					usDebugPushMessage(getDebugToken(), "GET DESCRIPTOR string");
+					const size_t descriptorSize = string_descriptor[descriptorIndex][0];
+					const void *descriptor = (const void *)&string_descriptor[descriptorIndex][0];
+					halUsbDeviceWriteTxIsr(aDriver, 0, descriptor, descriptorSize, 1);
+					break;
+				case 4:
+					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR interface");
+					break;
+				case 5:
+					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR endpoint");
+					break;
+				default:
+					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR Unhandled descriptor type");
+					break;
+				}
 			}
 			break;
+		}
 		case UsbBRequestGetConfiguration:
 			usDebugPushMessage(getDebugToken(), "GET_CONFIGURATION");
 			break;

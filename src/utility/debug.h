@@ -29,10 +29,38 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg);
 int usDebugPushMessage(int aToken, const char *aMessage);
 
 void usDebugIterDebugLoop();
-
 void usDebugPrintU8Array(const void *aData, size_t aDataLength);
-
 void usDebugPrintU16Array(const void *aData, size_t aDataLength);
+void usDebugPrintU32Array(const void *aData, size_t aDataLength);
+
+static inline void usDebugPrintHex8(uint8_t hex)
+{
+	extern const char gHexmap[16];
+	gVprintfCallback(&gHexmap[hex >> 4], 1);
+	gVprintfCallback(&gHexmap[hex & 0x0f], 1);
+}
+
+static inline void usDebugPrintHex16(uint16_t hex)
+{
+	extern const char gHexmap[16];
+	gVprintfCallback(&gHexmap[(hex & 0xf000) >> 12], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x0f00) >> 8], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x00f0) >> 4], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x000f)], 1);
+}
+
+static inline void usDebugPrintHex32(uint32_t hex)
+{
+	extern const char gHexmap[16];
+	gVprintfCallback(&gHexmap[(hex & 0xf0000000) >> 28], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x0f000000) >> 24], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x00f00000) >> 20], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x000f0000) >> 16], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x0000f000) >> 12], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x00000f00) >> 8], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x000000f0) >> 4], 1);
+	gVprintfCallback(&gHexmap[(hex & 0x0000000f)], 1);
+}
 
 #endif  // SRC_COMMON_UTILITY_DEBUG_H_
 

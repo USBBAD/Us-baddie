@@ -16,6 +16,11 @@
 #include <string.h>
 
 static size_t sCounter = 0U;
+const char gHexmap[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+static void usDebugPrintHex8(uint8_t hex);
+static void usDebugPrintHex16(uint16_t hex);
+static void usDebugPrintHex32(uint32_t hex);
 
 static void printFailedToAddTask(const void *aContext)
 {
@@ -103,7 +108,12 @@ void usDebugIterDebugLoop()
 
 		for (int j = 0; j < US_DEBUG_MAX_OVERALL_TOKEN_SLOTS; ++j) {
 			if (sDebugContext[i].tokenSlots[j].callable) {
-				usvprintf("%u [%s] ", sDebugContext[i].tokenSlots[j].counter, sDebugContext[i].context);
+#if 0
+				usDebugPrintHex16(sDebugContext[i].tokenSlots[j].counter);
+				gVprintfCallback(" ", 1);
+				gVprintfCallback(sDebugContext[i].context, strlen(sDebugContext[i].context));
+				gVprintfCallback(" | ", 3);
+#endif
 				sDebugContext[i].tokenSlots[j].callable(sDebugContext[i].tokenSlots[j].arg);
 				sDebugContext[i].tokenSlots[j].callable = 0;
 				sDebugContext[i].tokenSlots[j].arg = 0;
@@ -122,7 +132,7 @@ static inline void printAs(const void *aData, size_t aDataTypeSizeof)
 /// \def Performs formatted print
 /// \arg `rowlen` if non 0, output data will be aligned in a neat table
 /// \arg `delimiter` what will be printed b/w numbers
-#define USBAD_PRINT_ARRAY(numtype, data, size, format, delimiter, rowlen) \
+#define USBAD_PRINT_ARRAY(numtype, data, size, format, delimiter, rowlen, callback) \
 	do { \
 		const numtype *ptr = (numtype *)data; \
 		size_t nlCounter = 0; \
@@ -130,24 +140,25 @@ static inline void printAs(const void *aData, size_t aDataTypeSizeof)
 			if (nlCounter) { \
 				usvprintf(delimiter); \
 			} else if (rowlen) { \
-				usvprintf("\r\n"); \
+				gVprintfCallback("\r\n", 2); \
 			} \
 			nlCounter = rowlen ? (nlCounter + 1) % rowlen : nlCounter + 1; \
-			usvprintf(format, *ptr); \
+			gVprintfCallback("0x", 2); \
+			callback(*ptr); \
 		} \
 	} while (0);
 
 void usDebugPrintU8Array(const void *aData, size_t aDataLength)
 {
-	USBAD_PRINT_ARRAY(uint8_t, aData, aDataLength, "0x%02X", " ", 8);
+	USBAD_PRINT_ARRAY(uint8_t, aData, aDataLength, "0x%02X", " ", 8, usDebugPrintHex8);
 }
 
 void usDebugPrintU16Array(const void *aData, size_t aDataLength)
 {
-	USBAD_PRINT_ARRAY(uint16_t, aData, aDataLength, "0x%04X", " ", 8);
+	USBAD_PRINT_ARRAY(uint16_t, aData, aDataLength, "0x%04X", " ", 8, usDebugPrintHex16);
 }
 
 void usDebugPrintU32Array(const void *aData, size_t aDataLength)
 {
-	USBAD_PRINT_ARRAY(uint32_t, aData, aDataLength, "0x%08X", " ", 8);
+	USBAD_PRINT_ARRAY(uint32_t, aData, aDataLength, "0x%08X", " ", 8, usDebugPrintHex32);
 }

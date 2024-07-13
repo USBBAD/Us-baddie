@@ -10,6 +10,7 @@
 
 #include "utility/debug.h"
 #include "utility/fifo.h"
+#include <string.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -66,7 +67,10 @@ static void debugRegdumpPrintI32Context(const void *a)
 	(void)a;
 
 	while ((i32Context = fifoPop(&sI32ContextFifo)) != 0) {
-		usvprintf("%s 0x%08X\r\n", i32Context->title, i32Context->value);
+		gVprintfCallback(i32Context->title, strlen(i32Context->title));
+		gVprintfCallback(" 0x", 3);
+		usDebugPrintHex32(i32Context->value);
+		gVprintfCallback("\r\n", 2);
 	}
 }
 

@@ -11,7 +11,7 @@
 #include "hal/usb.h"
 #include "utility/debug.h"
 
-#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (4)
+#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (10)
 #include "utility/debug_regdump.h"
 
 /****************************************************************************
@@ -124,7 +124,6 @@ static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDri
 static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
-	usDebugPushMessage(getDebugToken(), "Device request");
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestSetAddress:
 			sDriverState.address = aSetupTransaction->wValue;
@@ -134,44 +133,37 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 		case UsbBRequestGetDescriptor: {
 			const uint16_t descriptorType = (aSetupTransaction->wValue & 0xFF00) >> 8;
 			const uint16_t descriptorIndex = aSetupTransaction->wValue & 0xFF;
+			debugRegdumpEnqueueI32Context("get descr. type", descriptorType);
 			switch (descriptorType) {
 				case 1:
-					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR device");
 					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
 					break;
-				case 2:
-					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR config");
+				case 2: {
 					size_t descriptorLength = config_descriptor[0];
 					if (aSetupTransaction->wLength < descriptorLength) {
 						descriptorLength = aSetupTransaction->wLength;
 					}
 					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0], descriptorLength, 1);
 					break;
+				}
 				case 3: {
-					usDebugPushMessage(getDebugToken(), "GET DESCRIPTOR string");
 					const size_t descriptorSize = string_descriptor[descriptorIndex][0];
 					const void *descriptor = (const void *)&string_descriptor[descriptorIndex][0];
 					halUsbDeviceWriteTxIsr(aDriver, 0, descriptor, descriptorSize, 1);
 					break;
 				case 4:
-					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR interface");
 					break;
 				case 5:
-					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR endpoint");
 					break;
 				default:
-					usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR Unhandled descriptor type");
 					break;
 				}
 			}
 			break;
 		}
 		case UsbBRequestGetConfiguration:
-			usDebugPushMessage(getDebugToken(), "GET_CONFIGURATION");
 			break;
 		default:
-			debugRegdumpEnqueueI32Context("Unhandled bRequest", aSetupTransaction->bRequest);
-
 			break;
 	}
 }
@@ -181,7 +173,6 @@ static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 {
 	switch (aContext->onRxIsr.transactionFlags & (HalUsbTransactionIn | HalUsbTransactionOut | HalUsbTransactionSetup)) {
 		case HalUsbTransactionSetup: {
-			usDebugPushMessage(getDebugToken(), "SETUP transaction");
 			// Hanlde setup transaction
 			struct SetupTransaction setupTransaction = *(const struct SetupTransaction *)aBuffer;
 			switch (setupTransaction.bmRequestType & (UsbBmRequestTypeRecipientMask)) {
@@ -202,7 +193,7 @@ static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 			break;
 		}
 		case HalUsbTransactionOut: {
-			usDebugPushMessage(getDebugToken(), "OUT transaction");
+//			usDebugPushMessage(getDebugToken(), "OUT transaction");
 			break;
 		}
 	}
@@ -212,7 +203,7 @@ static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 {
 	switch (aContext->onRxIsr.transactionFlags & (HalUsbTransactionIn | HalUsbTransactionOut | HalUsbTransactionSetup)) {
 		case HalUsbTransactionIn: {
-			usDebugPushMessage(getDebugToken(), "IN transaction");
+//			usDebugPushMessage(getDebugToken(), "IN transaction");
 			if (sDriverState.address >= 0) {
 				// Status transaction has been finished, transfer is finalized, now set the device's address
 				halUsbDeviceSetAddress(aDriver, (uint8_t)sDriverState.address);

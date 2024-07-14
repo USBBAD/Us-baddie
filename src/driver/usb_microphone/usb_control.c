@@ -130,14 +130,28 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 			// To finish status transaction
 			halUsbDeviceWriteTxIsr(aDriver, 0, "", 0, 1);
 			break;
+		case UsbBRequestSetConfiguration:
+			usDebugPushMessage(getDebugToken(), "SET_CONFIG");
+			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
+			break;
+		case UsbBRequestGetConfiguration:
+			usDebugPushMessage(getDebugToken(), "GET_CONFIG");
+			break;
 		case UsbBRequestGetDescriptor: {
 			const uint16_t descriptorType = (aSetupTransaction->wValue & 0xFF00) >> 8;
 			const uint16_t descriptorIndex = aSetupTransaction->wValue & 0xFF;
+#if 0
 			debugRegdumpEnqueueI32Context("get descr. type", descriptorType);
+#endif /* 0 */
 			switch (descriptorType) {
-				case 1:
-					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, 18, 1);
+				case 1: {
+					size_t descriptorLength = 18;
+					if (aSetupTransaction->wLength < descriptorLength) {
+						descriptorLength = aSetupTransaction->wLength;
+					}
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, descriptorLength, 1);
 					break;
+				}
 				case 2: {
 					size_t descriptorLength = config_descriptor[0];
 					if (aSetupTransaction->wLength < descriptorLength) {
@@ -151,18 +165,12 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 					const void *descriptor = (const void *)&string_descriptor[descriptorIndex][0];
 					halUsbDeviceWriteTxIsr(aDriver, 0, descriptor, descriptorSize, 1);
 					break;
-				case 4:
-					break;
-				case 5:
-					break;
 				default:
 					break;
 				}
 			}
 			break;
 		}
-		case UsbBRequestGetConfiguration:
-			break;
 		default:
 			break;
 	}
@@ -193,7 +201,6 @@ static void ep0OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 			break;
 		}
 		case HalUsbTransactionOut: {
-//			usDebugPushMessage(getDebugToken(), "OUT transaction");
 			break;
 		}
 	}
@@ -203,7 +210,6 @@ static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 {
 	switch (aContext->onRxIsr.transactionFlags & (HalUsbTransactionIn | HalUsbTransactionOut | HalUsbTransactionSetup)) {
 		case HalUsbTransactionIn: {
-//			usDebugPushMessage(getDebugToken(), "IN transaction");
 			if (sDriverState.address >= 0) {
 				// Status transaction has been finished, transfer is finalized, now set the device's address
 				halUsbDeviceSetAddress(aDriver, (uint8_t)sDriverState.address);

@@ -182,4 +182,3 @@ EXTERN volatile BdtLayout *gUsbBdt;
 #endif  /* __ASSEMBLY__ */
 
 #endif  // SRC_TARGET_ARM_STM32F1_STM32F1_USB_BDT_LAYOUT_H_
-

@@ -62,6 +62,14 @@ void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_
 void usStm32f1UsbWriteBdt(const uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset);
 
 /****************************************************************************
+* Private Function Prototypes
+****************************************************************************/
+
+static inline volatile uint32_t *getRxBufferAhb(uint8_t aEndpoint);
+static inline volatile uint32_t *getTxBufferAhb(uint8_t aEndpoint);
+static inline volatile uint32_t *getBufferAhbOffset(uint8_t aIndex);
+
+/****************************************************************************
  * Inline Functions
  ****************************************************************************/
 
@@ -240,15 +248,15 @@ static inline uint16_t resetEpxrCtrTx(uint16_t aEndpoint)
 }
 
 /// \brief Returns address of RX buffer
-static inline uint16_t getEpxAddrnRxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
+static inline uint16_t getEpxAddrnRxOffset(uint8_t aEpx)
 {
-	return getMinInnerBdtOffset(aMaxEndpoints) + aBufferSize * aEpx * 2;
+	return ((uint32_t)getRxBufferAhb(aEpx) - US_STM32F1_BDT_TABLE_AHB_ADDRESS) / 2;
 }
 
 /// \brief Returns address of TX buffer
-static inline uint16_t getEpxAddrnTxOffset(uint8_t aMaxEndpoints, uint16_t aBufferSize, uint8_t aEpx)
+static inline uint16_t getEpxAddrnTxOffset(uint8_t aEpx)
 {
-	return getEpxAddrnRxOffset(aMaxEndpoints, aBufferSize, aEpx) + aBufferSize;
+	return ((uint32_t)getTxBufferAhb(aEpx) - US_STM32F1_BDT_TABLE_AHB_ADDRESS) / 2;
 }
 
 // Was not made "static" intentionally
@@ -298,7 +306,7 @@ static inline volatile uint32_t *getBufferAhbOffset(uint8_t aIndex)
 	return bufferAhbOffset[aIndex];
 }
 
-static inline volatile uint32_t *getRxBufferAhbOffset(uint8_t aEndpoint)
+static inline volatile uint32_t *getRxBufferAhb(uint8_t aEndpoint)
 {
 	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS < aEndpoint) {
 		return 0;
@@ -307,7 +315,7 @@ static inline volatile uint32_t *getRxBufferAhbOffset(uint8_t aEndpoint)
 	return getBufferAhbOffset(aEndpoint * 2);
 }
 
-static inline volatile uint32_t *getTxBufferAhbOffset(uint8_t aEndpoint)
+static inline volatile uint32_t *getTxBufferAhb(uint8_t aEndpoint)
 {
 	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS < aEndpoint) {
 		return 0;

@@ -18,6 +18,8 @@
 * Pre-processor Definitions
 ****************************************************************************/
 
+#define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
+
 #if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 0
 #  ifndef USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
 #    error USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE definition required
@@ -182,4 +184,3 @@ EXTERN volatile BdtLayout *gUsbBdt;
 #endif  /* __ASSEMBLY__ */
 
 #endif  // SRC_TARGET_ARM_STM32F1_STM32F1_USB_BDT_LAYOUT_H_
-

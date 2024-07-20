@@ -56,7 +56,7 @@ void USB_LP_CAN1_RX0_IRQHandler();
 
 static int sDebugToken = -1;
 struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
-uint16_t sTransactBuffer[USBAD_USB_BUFFER_SIZE] = {0};
+uint16_t sTransactBuffer[128] = {0};
 
 /****************************************************************************
  * Public Data
@@ -102,11 +102,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 		usb->ISTR &= ~(USB_ISTR_CTR);
 
 		if (epxr & USB_EP0R_CTR_RX) {
+			uint16_t nWordsu16 = gUsbBdt->bdt[0].countRx & ((1 << 10) - 1);
 			// Reset ISR flag
 			resetEpxrCtrRx(endpointId);
 
 			// Handle OUT or SETUP transactions
-			uint16_t nWordsu16;
 			union HalUsbDeviceContextVariant context = {
 				.onRxIsr = {
 					.endpointId = endpointId,
@@ -115,10 +115,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			};
 
 			// Read out buffer, and its length
-			usStm32f1UsbReadBdt(&sTransactBuffer[0], USBAD_USB_BUFFER_SIZE, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS,
-				USBAD_USB_BUFFER_SIZE, endpointId));
-			getUsbCountnRx(usb, endpointId, &nWordsu16);
-			nWordsu16 &= (1 << 10) - 1;
+			usStm32f1UsbReadBdt(&sTransactBuffer[0], nWordsu16, getEpxAddrnRxOffset(endpointId));
 
 			// Initialize context
 			if (epxr & USB_EP0R_SETUP) {
@@ -192,10 +189,12 @@ void usbInitialize()
 	usStm32f1UsbSetBdt(0x0000, 64, 0);
 
 	// Configure control endpoint BDT
-	setUsbCountnRx(usb, 0, (1 << 15) | (1 << 10));
+	setUsbCountnRx(usb, 0, (1 << 15) | (3 << 10));
 	setUsbCountnTx(usb, 0, 0);
-	setUsbAddrnRx(usb, 0, getEpxAddrnRxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, 0));
-	setUsbAddrnTx(usb, 0, getEpxAddrnTxOffset(USBAD_USB_MAX_ENDPOINTS, USBAD_USB_BUFFER_SIZE, 0));
+	setUsbAddrnRx(usb, 0, getEpxAddrnRxOffset(0));
+	setUsbAddrnTx(usb, 0, getEpxAddrnTxOffset(0));
+	setUsbAddrnRx(usb, 1, getEpxAddrnRxOffset(1));
+	setUsbAddrnTx(usb, 1, getEpxAddrnTxOffset(1));
 
 	// Enable USB interrupts
 	usb->CNTR =
@@ -221,7 +220,7 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 	int aIsData1)
 {
 	// Copy data into USB buffer
-	volatile uint32_t *out = getTxBufferAhbOffset(aEndpoint);
+	volatile uint32_t *out = getTxBufferAhb(aEndpoint);
 	size_t remaining = aSize / 2;
 	for (const uint16_t *in = aBuffer; remaining; --remaining) {
 		*out = *in;

@@ -9,13 +9,11 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
-
 /****************************************************************************
  * Included files
  ****************************************************************************/
 
-#include "stm32f1_usb_bdt_layout.h"
+#include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include <Driver_USBD.h>
 #include <stddef.h>
 #include <stdint.h>

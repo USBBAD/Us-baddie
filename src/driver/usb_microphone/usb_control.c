@@ -92,7 +92,11 @@ extern uint8_t *string_descriptor[];
 
 struct {
 	int16_t address;
-} sDriverState = {-1};
+	int16_t configuration;
+} sDriverState = {
+	.address = -1,
+	.configuration = 0,
+};
 
 /****************************************************************************
  * Public Data
@@ -132,10 +136,13 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 			break;
 		case UsbBRequestSetConfiguration:
 			usDebugPushMessage(getDebugToken(), "SET_CONFIG");
-			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
+			sDriverState.configuration = (uint8_t)aSetupTransaction->wValue;
+//			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
+			halUsbDeviceWriteTxIsr(aDriver, 0, &sDriverState.configuration, 2, (aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 			break;
 		case UsbBRequestGetConfiguration:
 			usDebugPushMessage(getDebugToken(), "GET_CONFIG");
+			halUsbDeviceWriteTxIsr(aDriver, 0, &sDriverState.configuration, 1, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 			break;
 		case UsbBRequestGetDescriptor: {
 			const uint16_t descriptorType = (aSetupTransaction->wValue & 0xFF00) >> 8;

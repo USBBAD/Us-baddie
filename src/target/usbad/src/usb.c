@@ -15,7 +15,7 @@
 #define USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS (2)
 #define USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE (64)
 #define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE (0)
-#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX (256)
+#define USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX (64)
 
 #define USBAD_USB_BUFFER_SIZE USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
 #define USBAD_USB_MAX_ENDPOINTS USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS
@@ -141,12 +141,10 @@ void USB_LP_CAN1_RX0_IRQHandler()
 					.transactionFlags = 0,
 				},
 			};
-			context.onRxIsr.transactionFlags |= HalUsbTransactionIn;
+			context.onTxIsr.transactionFlags |= HalUsbTransactionIn;
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
-			context.onRxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+			context.onTxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
 			sHalUsbDrivers[endpointId]->onTxIsr(sHalUsbDrivers[endpointId], &context);
-
-			// TODO: notify the driver
 		}
 
 		return;

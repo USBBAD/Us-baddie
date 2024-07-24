@@ -10,6 +10,7 @@
 
 #include "hal/usb.h"
 #include "utility/debug.h"
+#include "utility/ushelp.h"
 
 #define USBAD_DEBUG_REGDUMP_FIFO_SIZE (10)
 #include "utility/debug_regdump.h"
@@ -91,8 +92,14 @@ extern uint8_t config_descriptor[];
 extern uint8_t *string_descriptor[];
 
 struct {
-	int16_t address;
-} sDriverState = {-1};
+	int16_t address; ///< Pending device address setting
+	uint8_t *sendBuffer; ///< Pending chunk-by-chunk sending
+	uint8_t *sendBufferEnd; ///< End position for chunk-by-chunk sending
+} sDriverState = {
+	.address = -1,
+	.sendBuffer = 0,
+	.sendBufferEnd = 0,
+};
 
 /****************************************************************************
  * Public Data
@@ -149,21 +156,29 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 					if (aSetupTransaction->wLength < descriptorLength) {
 						descriptorLength = aSetupTransaction->wLength;
 					}
-					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, descriptorLength, 1);
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&sUsbDeviceDescriptor, descriptorLength,
+						!(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 					break;
 				}
 				case 2: {
-					size_t descriptorLength = config_descriptor[0];
-					if (aSetupTransaction->wLength < descriptorLength) {
+					uint16_t descriptorLength = 100; // TODO: replace the magic number
+					if (descriptorLength > aSetupTransaction->wLength) {
 						descriptorLength = aSetupTransaction->wLength;
 					}
-					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0], descriptorLength, 1);
+					if (descriptorLength > sUsbDeviceDescriptor.bMaxPacketSize) {
+						sDriverState.sendBuffer = &config_descriptor[sUsbDeviceDescriptor.bMaxPacketSize];
+						sDriverState.sendBufferEnd = &config_descriptor[descriptorLength];
+						descriptorLength = sUsbDeviceDescriptor.bMaxPacketSize;
+					}
+					halUsbDeviceWriteTxIsr(aDriver, 0, (const void *)&config_descriptor[0], descriptorLength,
+						!(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 					break;
 				}
 				case 3: {
 					const size_t descriptorSize = string_descriptor[descriptorIndex][0];
 					const void *descriptor = (const void *)&string_descriptor[descriptorIndex][0];
-					halUsbDeviceWriteTxIsr(aDriver, 0, descriptor, descriptorSize, 1);
+					halUsbDeviceWriteTxIsr(aDriver, 0, descriptor, descriptorSize,
+						!(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 					break;
 				default:
 					break;
@@ -214,6 +229,24 @@ static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 				// Status transaction has been finished, transfer is finalized, now set the device's address
 				halUsbDeviceSetAddress(aDriver, (uint8_t)sDriverState.address);
 				sDriverState.address = -1;
+			}
+			if (sDriverState.sendBuffer != 0) {
+				const size_t remaining = sDriverState.sendBufferEnd - sDriverState.sendBuffer;
+				if (remaining == 0U) {
+					// Reset driver state
+					sDriverState.sendBuffer = 0;
+					sDriverState.sendBufferEnd = 0;
+
+					// Send ZLP
+					halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0,
+						!(aContext->onTxIsr.transactionFlags & HalUsbTransactionData1)); // TODO: DATA0?
+				} else {
+					// Send as much as permitted by the device descriptor
+					const size_t sendLength = US_MIN(remaining, sUsbDeviceDescriptor.bMaxPacketSize);
+					sDriverState.sendBuffer += sendLength;
+					halUsbDeviceWriteTxIsr(aDriver, 0, sDriverState.sendBuffer, sendLength,
+						!(aContext->onTxIsr.transactionFlags & HalUsbTransactionData1)); // TODO: DATA0?
+				}
 			}
 			break;
 		}

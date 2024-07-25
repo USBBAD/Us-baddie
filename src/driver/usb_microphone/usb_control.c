@@ -118,10 +118,15 @@ static inline void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriv
 static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
-	usDebugPushMessage(getDebugToken(), "Interface request");
+//	usDebugPushMessage(getDebugToken(), "Interface request");
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestGetDescriptor: {
 			usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR intefrace");
+		}
+		case UsbBRequestSetInterface: {
+			usDebugPushMessage(getDebugToken(), "SET INTERFACE request");
+			// TODO: handle interface setting logic
+			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 		}
 		default:
 			break;

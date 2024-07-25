@@ -243,9 +243,9 @@ static void ep0OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 				} else {
 					// Send as much as permitted by the device descriptor
 					const size_t sendLength = US_MIN(remaining, sUsbDeviceDescriptor.bMaxPacketSize);
-					sDriverState.sendBuffer += sendLength;
 					halUsbDeviceWriteTxIsr(aDriver, 0, sDriverState.sendBuffer, sendLength,
 						!(aContext->onTxIsr.transactionFlags & HalUsbTransactionData1)); // TODO: DATA0?
+					sDriverState.sendBuffer += sendLength;
 				}
 			}
 			break;

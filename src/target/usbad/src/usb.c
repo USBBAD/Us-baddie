@@ -29,7 +29,6 @@
 #include "arm/stm32f1/stm32f1_usb.h"
 #include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include "hal/usb.h"
-#include "driver/usb_microphone/usb_control.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/fifo.h"
@@ -82,7 +81,6 @@ void USB_LP_CAN1_RX0_IRQHandler()
         usb->ISTR &= ~(USB_ISTR_RESET | USB_ISTR_WKUP | USB_ISTR_SUSP);
         usb->CNTR &= ~(USB_CNTR_RESUME | USB_CNTR_FSUSP | USB_CNTR_LP_MODE | USB_CNTR_PDWN | USB_CNTR_FRES);
 
-		initializeEp0UsbHalDeviceDriver();
         setEpxrEpType(0, 1);
         setEpxrDtogTx(0, 1);
         setEpxrDtogTx(0, 0);

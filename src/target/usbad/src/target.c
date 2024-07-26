@@ -6,11 +6,12 @@
 //
 
 #include "clock.h"
+#include "driver/usb_microphone/usb_microphone.h"
 #include "stm32f103c6_adc.h"
 #include "stm32f103c6_dma.h"
 #include "stm32f103c6_uart.h"
-#include "usb.h"
 #include "target/target.h"
+#include "usb.h"
 
 struct Target
 {
@@ -62,5 +63,6 @@ void targetInitialize()
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();
+	usbMicrophoneRegisterUsbDriver();
 	usbInitialize();
 }

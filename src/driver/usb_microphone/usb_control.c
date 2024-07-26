@@ -121,7 +121,10 @@ static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDri
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestSetInterface: {
 			// TODO: handle interface setting logic
+			debugRegdumpEnqueueI32Context("Set interface wIndex wValue",
+				aSetupTransaction->wIndex << 16 | (aSetupTransaction->wValue & 0xFFFF));
 			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
+			break;
 		}
 		default:
 			debugRegdumpEnqueueI32Context("Unhandled interface request", aSetupTransaction->bRequest);

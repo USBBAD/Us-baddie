@@ -33,14 +33,16 @@ enum {
 	UsbBmRequestTypeRecipientInterface = 1,
 	UsbBmRequestTypeRecipientEndpoint = 2,
 	// bRequest field values
-	UsbBRequestGetStatus = 0,
-	UsbBRequestClearFeature = 1,
-	UsbBRequestSetFeature = 3,
-	UsbBRequestSetAddress = 5,
-	UsbBRequestGetDescriptor = 6,
-	UsbBRequestSetDescriptor = 7,
-	UsbBRequestGetConfiguration = 8,
-	UsbBRequestSetConfiguration = 9,
+	UsbBRequestGetStatus = 0x00,
+	UsbBRequestClearFeature = 0x01,
+	UsbBRequestSetFeature = 0x03,
+	UsbBRequestSetAddress = 0x05,
+	UsbBRequestGetDescriptor = 0x06,
+	UsbBRequestSetDescriptor = 0x07,
+	UsbBRequestGetConfiguration = 0x08,
+	UsbBRequestSetConfiguration = 0x09,
+	UsbBRequestGetInterface = 0x0a,
+	UsbBRequestSetInterface = 0x0b,
 };
 
 typedef enum {

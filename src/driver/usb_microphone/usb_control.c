@@ -112,23 +112,19 @@ struct {
 static inline void handleSetupBmRequestEndpoint(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
-	usDebugPushMessage(getDebugToken(), "Endpoint request");
+	usDebugPushMessage(getDebugToken(), "Unhandled endpoint request");
 }
 
 static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext,
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
-//	usDebugPushMessage(getDebugToken(), "Interface request");
 	switch (aSetupTransaction->bRequest) {
-		case UsbBRequestGetDescriptor: {
-			usDebugPushMessage(getDebugToken(), "GET_DESCRIPTOR intefrace");
-		}
 		case UsbBRequestSetInterface: {
-			usDebugPushMessage(getDebugToken(), "SET INTERFACE request");
 			// TODO: handle interface setting logic
 			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 		}
 		default:
+			debugRegdumpEnqueueI32Context("Unhandled interface request", aSetupTransaction->bRequest);
 			break;
 	}
 }
@@ -145,9 +141,6 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 		case UsbBRequestSetConfiguration:
 			usDebugPushMessage(getDebugToken(), "SET_CONFIG");
 			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
-			break;
-		case UsbBRequestGetConfiguration:
-			usDebugPushMessage(getDebugToken(), "GET_CONFIG");
 			break;
 		case UsbBRequestGetDescriptor: {
 			const uint16_t descriptorType = (aSetupTransaction->wValue & 0xFF00) >> 8;
@@ -192,6 +185,7 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 			break;
 		}
 		default:
+			debugRegdumpEnqueueI32Context("Unhandled device request", aSetupTransaction->bRequest);
 			break;
 	}
 }

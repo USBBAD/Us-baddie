@@ -67,3 +67,8 @@ void initializeEp1UsbHalDeviceDriver()
 {
 	halUsbDeviceRegisterDriver(&sep1UsbDriver, 1);
 }
+
+void usbMicrophoneSetMonoPcm16Buffer(const uint16_t *aBuffer, size_t aSize)
+{
+	halUsbDeviceWriteTxIsr(&sep1UsbDriver, 1, aBuffer, aSize * 2, 0);
+}

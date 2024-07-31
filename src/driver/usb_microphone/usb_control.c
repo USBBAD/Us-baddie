@@ -8,6 +8,7 @@
 #ifndef SRC_TARGET_USBAD_SRC_USB_CONTROL_C_
 #define SRC_TARGET_USBAD_SRC_USB_CONTROL_C_
 
+#include "driver/usb_microphone/usb_microphone.h"
 #include "hal/usb.h"
 #include "utility/debug.h"
 #include "utility/ushelp.h"
@@ -92,9 +93,9 @@ extern uint8_t config_descriptor[];
 extern uint8_t *string_descriptor[];
 
 struct {
-	int16_t address; ///< Pending device address setting
-	uint8_t *sendBuffer; ///< Pending chunk-by-chunk sending
-	uint8_t *sendBufferEnd; ///< End position for chunk-by-chunk sending
+	int16_t address; /**< Pending device address setting */
+	uint8_t *sendBuffer; /**< Pending chunk-by-chunk sending */
+	uint8_t *sendBufferEnd; /**< End position for chunk-by-chunk sending */
 } sDriverState = {
 	.address = -1,
 	.sendBuffer = 0,
@@ -120,9 +121,22 @@ static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDri
 {
 	switch (aSetupTransaction->bRequest) {
 		case UsbBRequestSetInterface: {
-			// TODO: handle interface setting logic
-			debugRegdumpEnqueueI32Context("Set interface wIndex wValue",
-				aSetupTransaction->wIndex << 16 | (aSetupTransaction->wValue & 0xFFFF));
+			const uint16_t setInterfaceIndex = aSetupTransaction->wIndex;
+			/* Which interface's configuration to choose. 0 - no audio data, 1 - stream 16-bit PCM */
+			const uint16_t setInterfaceValue = aSetupTransaction->wValue;
+			/* TODO: handle interface setting logic */
+
+			if (setInterfaceValue == 0) {
+				usbMicrophoneSetEnabled(0);
+				usDebugPushMessage(getDebugToken(), "Disabled Audio");
+			} else if (setInterfaceValue == 1) {
+				usbMicrophoneSetEnabled(1);
+				usDebugPushMessage(getDebugToken(), "Enabled Audio");
+			} else {
+				debugRegdumpEnqueueI32Context("Incorrect interface setting index:", setInterfaceValue);
+			}
+
+			/* Respond w/ ZLP */
 			halUsbDeviceWriteTxIsr(aDriver, 0, 0, 0, !(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
 			break;
 		}

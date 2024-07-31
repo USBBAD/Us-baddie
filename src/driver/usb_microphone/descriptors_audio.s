@@ -1,16 +1,19 @@
 /*
- * Credit to: "anonymou8" (https://github.com/Embrobusto/stm32_usb_audio)
+ * Copy-pasted from the work by "anonymou8" (https://github.com/Embrobusto/stm32_usb_audio)
  */
+
+#ifndef SRC_DRIVER_USB_MICROPHONE_DESCRIPTORS_AUDIO_S_
+#define SRC_DRIVER_USB_MICROPHONE_DESCRIPTORS_AUDIO_S_
 
 /*************************************************************************************/
 /* Symbols */
 
     FREQ = 192000
 
-    EP0_BUF_SZ = 8      /* Must cohere to C definition */
-    EP1_BUF_SZ = 512    /* Max */
+    EP0_BUF_SZ = 64    /* Must cohere to C definition */
+    EP1_BUF_SZ = 64    /* Must cohere to C definition */
 
-    VID = 0xf055        /* Unofficial FOSS VID */
+    VID = 0xf055       /* Unofficial FOSS VID */
     PID = 0xf055
 
     DESC_TYPE_DEVICE    = 1
@@ -224,3 +227,5 @@
 /*************************************************************************************/
 
 .align 1
+
+#endif  /* SRC_DRIVER_USB_MICROPHONE_DESCRIPTORS_AUDIO_S_ */

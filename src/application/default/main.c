@@ -5,6 +5,8 @@
 //  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
 //
 
+#include "driver/usb_microphone/stub.h"
+#include "driver/usb_microphone/usb_microphone.h"
 #include "hal/adc.h"
 #include "hal/dma.h"
 #include "hal/uart.h"
@@ -59,6 +61,8 @@ int main(void)
 	adcStart();
 	usDebugAddTask(sToken, printStarted, 0);
 	usDebugPushMessage(sToken, "System is up");
+	usbMicrophoneInitUsbDriver();
+	usbMicrophoneInitStub();
 
 	while (1) {
 		usDebugIterDebugLoop();

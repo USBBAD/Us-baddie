@@ -5,10 +5,6 @@
 //     Author: Dmitry Murashov
 //
 
-#include "hal/usb.h"
-#include "utility/ushelp.h"
-#include <stddef.h>
-#include <stdint.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -19,6 +15,12 @@
 /****************************************************************************
  * Included files
  ****************************************************************************/
+
+#include "driver/usb_microphone/usb_microphone.h"
+#include "hal/usb.h"
+#include "utility/ushelp.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /****************************************************************************
  * Private Types
@@ -64,6 +66,8 @@ static struct Ep1DriverState sEp1DriverState = {
  * Public Data
  ****************************************************************************/
 
+extern struct UsbMicrophoneHook *gUsbMicrophoneHook;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -71,6 +75,7 @@ static struct Ep1DriverState sEp1DriverState = {
 static void ep1OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext, const void *aBuffer,
 	size_t aSize)
 {
+	/* Not used: this endpoint is "IN" endpoint */
 	(void)aDriver;
 	(void)aContext;
 	(void)aBuffer;
@@ -80,6 +85,9 @@ static void ep1OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext)
 {
 	transmitBoundChecked();
+	if (isTxStateFinished() && gUsbMicrophoneHook) {
+		gUsbMicrophoneHook->onChunkTransmitted();
+	}
 }
 
 static inline void advanceTxState(size_t aN)

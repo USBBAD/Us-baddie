@@ -13,6 +13,8 @@
  * Included files
  ****************************************************************************/
 
+#include "driver/usb_microphone/usb_microphone.h"
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -37,6 +39,8 @@ static struct UsbMicrophoneLogicState sLogicState = {
 	.enabled = 0,
 };
 
+struct UsbMicrophoneHook *gUsbMicrophoneHook;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -52,9 +56,17 @@ static struct UsbMicrophoneLogicState sLogicState = {
 void usbMicrophoneSetEnabled(int aEnabled)
 {
 	sLogicState.enabled = aEnabled;
+	if (gUsbMicrophoneHook) {
+		gUsbMicrophoneHook->onEnabledStateChangedIsr(aEnabled);
+	}
 }
 
 int usbMicrophoneIsEnabled()
 {
 	return sLogicState.enabled;
+}
+
+void usbMicrophoneSetHook(struct UsbMicrophoneHook *aHook)
+{
+	gUsbMicrophoneHook = aHook;
 }

@@ -5,7 +5,16 @@
 //  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
 //
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
+
 #include "clock.h"
+#include "driver/usb_microphone/stub.h"
 #include "driver/usb_microphone/usb_microphone.h"
 #include "stm32f103c6_adc.h"
 #include "stm32f103c6_dma.h"
@@ -13,14 +22,28 @@
 #include "target/target.h"
 #include "usb.h"
 
-struct Target
-{
-};
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
-static struct Target sTarget;
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
 static void initializeBss();
 static void initializeData();
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /// @brief Sets the entire .bss section w/ NULL
 static void initializeBss()
@@ -51,6 +74,10 @@ static void initializeData()
 	}
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
 void memoryInitialize()
 {
 	initializeBss();
@@ -63,6 +90,7 @@ void targetInitialize()
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();
-	usbMicrophoneRegisterUsbDriver();
 	usbInitialize();
+	usbMicrophoneInitUsbDriver();
+	usbMicrophoneInitStub();
 }

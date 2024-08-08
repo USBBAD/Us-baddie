@@ -5,8 +5,8 @@
 //     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
 //
 
-#define US_DEBUG_MAX_TOKENS (5)
-#define US_DEBUG_MAX_REGULAR_TOKEN_SLOTS (10)
+#define US_DEBUG_MAX_TOKENS (1)
+#define US_DEBUG_MAX_REGULAR_TOKEN_SLOTS (20)
 #define US_DEBUG_FAIL_TOKEN_SLOT_ID (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS)
 #define US_DEBUG_MAX_OVERALL_TOKEN_SLOTS (US_DEBUG_MAX_REGULAR_TOKEN_SLOTS + 1)
 
@@ -54,24 +54,23 @@ static struct DebugContext sDebugContext[US_DEBUG_MAX_TOKENS] = {{
 
 int usDebugRegisterToken(const char *aContext)
 {
-	for (int i = 0; i < US_DEBUG_MAX_TOKENS; ++i) {
-		if (sDebugContext[i].context == 0) {
-			sDebugContext[i].context = aContext;
-			// Initialize FIFO for regular token slots (i.e. w/o error messages)
-			fifoInitialize(&sDebugContext[i].fifo, &sDebugContext[i].tokenSlots, US_DEBUG_MAX_REGULAR_TOKEN_SLOTS,
-				sizeof(struct TokenSlot));
-
-			return i;
-		}
+	const int i = 0;
+	if (sDebugContext[i].context != 0) {
+		return i;
 	}
+	sDebugContext[i].context = aContext;
+	// Initialize FIFO for regular token slots (i.e. w/o error messages)
+	fifoInitialize(&sDebugContext[i].fifo, &sDebugContext[i].tokenSlots, US_DEBUG_MAX_REGULAR_TOKEN_SLOTS,
+		sizeof(struct TokenSlot));
 
-	return -1;
+	return i;
 }
 
 int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg)
 {
 	struct TokenSlot *slot = 0;
 	int ret = 1;
+	aToken = 0;
 
 	if (aToken < 0) {
 		return -1;

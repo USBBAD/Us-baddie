@@ -217,6 +217,11 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 {
 	// Copy data into USB buffer
 	volatile uint32_t *out = getTxBufferAhb(aEndpoint);
+
+	if (!out) {
+		usDebugPushMessage(0, "usb.c: couldn't get EP buffer");
+	}
+
 	size_t remaining = aSize / 2;
 	for (const uint16_t *in = aBuffer; remaining; --remaining) {
 		*out = *in;

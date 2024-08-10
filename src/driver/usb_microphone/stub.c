@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include "driver/usb_microphone/usb_microphone.h"
+#include "utility/debug.h"
 #include "utility/ushelp.h"
 #include <math.h>
 #include <stdint.h>
@@ -45,7 +46,7 @@ struct WaveGenerationState {
  ****************************************************************************/
 
 static uint16_t generateSample();
-void generateAndSend();
+void generate();
 void onEnabledStateChangedIsr(int aEnabled);
 void onChunkTransmitted();
 
@@ -94,23 +95,31 @@ static uint16_t generateSample()
 	return US_CLAMP(0, 0xFFFF, value);
 }
 
-void generateAndSend()
+void generate()
 {
+#if 0
+	usDebugPushMessage(0, "Generating");
 	for (int i = 0; i < US_ARRAY_SIZE(sMonoPcmBuffer); ++i) {
 		sMonoPcmBuffer[i] = generateSample();
 	}
-	usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuffer[0], US_ARRAY_SIZE(sMonoPcmBuffer));
+#else
+	for (int i = 0; i < US_ARRAY_SIZE(sMonoPcmBuffer); ++i) {
+		sMonoPcmBuffer[i] = 0xcafe;
+	}
+#endif
 }
 
 void onEnabledStateChangedIsr(int aEnabled)
 {
-	generateAndSend();
+	if (aEnabled) {
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuffer[0], US_ARRAY_SIZE(sMonoPcmBuffer));
+	}
 }
 
 void onChunkTransmitted()
 {
 	if (usbMicrophoneIsEnabled()) {
-		generateAndSend();
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuffer[0], US_ARRAY_SIZE(sMonoPcmBuffer));
 	}
 }
 
@@ -121,4 +130,5 @@ void onChunkTransmitted()
 void usbMicrophoneInitStub()
 {
 	usbMicrophoneSetHook(&sUsbMicrophoneHook);
+	generate();
 }

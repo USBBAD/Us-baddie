@@ -26,6 +26,7 @@ int usDebugAddTask(int aToken, UsDebugCallable aCallable, const void *aArg);
 
 /// \brief Pushes message w/o the need for formatting
 /// \details CR, NL symbols will be added automatically
+/// \param aToken -- legacy, not used
 int usDebugPushMessage(int aToken, const char *aMessage);
 
 void usDebugIterDebugLoop();

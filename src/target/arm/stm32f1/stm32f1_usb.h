@@ -317,7 +317,7 @@ static inline volatile uint32_t *getRxBufferAhb(uint8_t aEndpoint)
 
 static inline volatile uint32_t *getTxBufferAhb(uint8_t aEndpoint)
 {
-	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS < aEndpoint) {
+	if (USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS <= aEndpoint) {
 		return 0;
 	}
 

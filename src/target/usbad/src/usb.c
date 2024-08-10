@@ -54,8 +54,8 @@ void USB_LP_CAN1_RX0_IRQHandler();
  ****************************************************************************/
 
 static int sDebugToken = -1;
-struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
-uint16_t sTransactBuffer[128] = {0};
+static struct HalUsbDeviceDriver *sHalUsbDrivers[8] = {0};
+static uint16_t sTransactBuffer[128] = {0};
 
 /****************************************************************************
  * Public Data
@@ -81,11 +81,18 @@ void USB_LP_CAN1_RX0_IRQHandler()
         usb->ISTR &= ~(USB_ISTR_RESET | USB_ISTR_WKUP | USB_ISTR_SUSP);
         usb->CNTR &= ~(USB_CNTR_RESUME | USB_CNTR_FSUSP | USB_CNTR_LP_MODE | USB_CNTR_PDWN | USB_CNTR_FRES);
 
-        setEpxrEpType(0, 1);
-        setEpxrDtogTx(0, 1);
-        setEpxrDtogTx(0, 0);
-        setEpxrStatTx(0, 2);
-        setEpxrStatRx(0, 2);
+		setEpxrEpType(0, 1);
+		setEpxrDtogTx(0, 1);
+		setEpxrDtogTx(0, 0);
+		setEpxrStatTx(0, 2);
+		setEpxrStatRx(0, 2);
+
+		setEpxrEpType(1, 2); /* ISOCH */
+		setEpxrStatTx(1, 2);
+		setEpxrStatRx(1, 2);
+		setEpxrDtogTx(1, 1);
+		setEpxrDtogTx(1, 1);
+		gUsbBdt->bdt[1].countTx = 0;
 
         usb->DADDR |= USB_DADDR_EF;
 
@@ -142,6 +149,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			context.onTxIsr.transactionFlags |= HalUsbTransactionIn;
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 			context.onTxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
+
 			sHalUsbDrivers[endpointId]->onTxIsr(sHalUsbDrivers[endpointId], &context);
 		}
 
@@ -185,10 +193,14 @@ void usbInitialize()
 	usStm32f1UsbSetBdt(0x0000, 64, 0);
 
 	// Configure control endpoint BDT
-	setUsbCountnRx(usb, 0, (1 << 15) | (3 << 10));
+	setUsbCountnRx(usb, 0, (1 << 15) | (1 << 10));
 	setUsbCountnTx(usb, 0, 0);
 	setUsbAddrnRx(usb, 0, getEpxAddrnRxOffset(0));
 	setUsbAddrnTx(usb, 0, getEpxAddrnTxOffset(0));
+
+	// Configure isoch endpoint BDT
+	setUsbCountnRx(usb, 1, (1 << 15) | (1 << 10));
+	setUsbCountnTx(usb, 1, 0);
 	setUsbAddrnRx(usb, 1, getEpxAddrnRxOffset(1));
 	setUsbAddrnTx(usb, 1, getEpxAddrnTxOffset(1));
 

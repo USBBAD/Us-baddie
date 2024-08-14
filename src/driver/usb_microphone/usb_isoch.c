@@ -10,7 +10,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define EP1_BUFFER_SIZE (64) /* TODO: duplicates descriptors_audio.h */
+#define EP1_BUFFER_SIZE (64) /* TODO: duplicates descriptors_audio.h, and usb.c */
+#if EP1_BUFFER_SIZE != 64
+#error "Buffer sizes must be the same in descriptors_audio.s, and usb.c"
+#endif /* EP1_BUFFER_SIZE != 64 */
+
+#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (4)
 
 /****************************************************************************
  * Included files
@@ -18,6 +23,8 @@
 
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/usb.h"
+#include "utility/debug.h"
+#include "utility/debug_regdump.h"
 #include "utility/ushelp.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -80,6 +87,7 @@ static void ep1OnRx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 	(void)aContext;
 	(void)aBuffer;
 	(void)aSize;
+	usDebugPushMessage(0, "[isoch] EP1 on rx");
 }
 
 static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContextVariant *aContext)
@@ -88,6 +96,7 @@ static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 	if (isTxStateFinished() && gUsbMicrophoneHook) {
 		gUsbMicrophoneHook->onChunkTransmitted();
 	}
+	usDebugPushMessage(0, "[isoch] successfully transmitted");
 }
 
 static inline void advanceTxState(size_t aN)
@@ -117,6 +126,7 @@ static void transmitBoundChecked()
 {
 	const size_t bufferSize = US_MIN(getTxStateRemainingBytes(), EP1_BUFFER_SIZE);
 	if (bufferSize) {
+		debugRegdumpEnqueueI32Context("Sending # bytes:", (uint32_t)bufferSize);
 		halUsbDeviceWriteTxIsr(&sep1UsbDriver, 1, sEp1DriverState.txState.current, bufferSize, 0);
 		advanceTxState(bufferSize);
 	} else {
@@ -130,6 +140,7 @@ static void transmitBoundChecked()
 
 void initializeEp1UsbHalDeviceDriver()
 {
+	debugRegdumpInitialize("");
 	halUsbDeviceRegisterDriver(&sep1UsbDriver, 1);
 }
 

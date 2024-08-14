@@ -217,6 +217,11 @@ static inline uint16_t setEpxrNonToggle(uint8_t aEndpoint, uint32_t aValue, uint
 	return epxr;
 }
 
+static inline uint16_t setEpxrEa(uint8_t aEndpoint, uint32_t aValue)
+{
+	return setEpxrNonToggle(aEndpoint, aValue, USB_EP0R_EA_Pos, USB_EP0R_EA_Msk);
+}
+
 static inline uint16_t setEpxrStatTx(uint8_t aEndpoint, uint32_t aValue)
 {
 	return setEpxrToggle(aEndpoint, aValue, USB_EP0R_STAT_TX_Pos, USB_EP0R_STAT_TX_Msk);

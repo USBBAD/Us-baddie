@@ -14,12 +14,15 @@
 #define US_SCALE (1)
 #define US_OFFSET (0)
 
+#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (10)
+
 /****************************************************************************
  * Included files
  ****************************************************************************/
 
 #include "driver/usb_microphone/usb_microphone.h"
 #include "utility/debug.h"
+#include "utility/debug_regdump.h"
 #include "utility/ushelp.h"
 #include <math.h>
 #include <stdint.h>
@@ -129,6 +132,7 @@ void onChunkTransmitted()
 
 void usbMicrophoneInitStub()
 {
+	debugRegdumpInitialize("");
 	usbMicrophoneSetHook(&sUsbMicrophoneHook);
 	generate();
 }

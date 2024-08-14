@@ -46,11 +46,18 @@ enum {
 };
 
 typedef enum {
-	HalUsbTransactionData1 = 1 << 0,  ///< If set, DATA1. Else DATA0
-	HalUsbTransactionSetup = 1 << 1,  ///< If set, SETUP transaction is taking place
-	HalUsbTransactionOut = 1 << 2,  ///< If set, OUT transaction is taking place
-	HalUsbTransactionIn = 1 << 3,  ///< If set, OUT transaction is taking place
+	HalUsbTransactionData1 = 1 << 0,  /** < If set, DATA1. Else DATA0 */
+	HalUsbTransactionSetup = 1 << 1,  /** < If set, SETUP transaction is taking place */
+	HalUsbTransactionOut = 1 << 2,  /** < If set, OUT transaction is taking place */
+	HalUsbTransactionIn = 1 << 3,  /** < If set, OUT transaction is taking place */
 } HalUsbTransaction;
+
+enum HalUsbEpState {
+	HalUsbEpStateDisabled = 0, /**< The EP will not respond to any command */
+	HalUsbEpStateNak, /**< EP requests will be NAKed */
+	HalUsbEpStateStall, /**< EP requests will be STALLed */
+	HalUsbEpStateValid, /**< The EP is ready to process IN or OUT packet. When IN transactions are involved, the driver MUST set the EP to valid automatically */
+};
 
 /// \brief A supplement providing additional information (just in case)
 union HalUsbDeviceContextVariant {
@@ -109,11 +116,18 @@ void halUsbDeviceRegisterDriver(struct HalUsbDeviceDriver *aDriver, uint8_t aEnd
 /// \brief Puts a certain number of bytes into USB TX. MAY
 /// involve delayed sending. To be implemented on a particular
 /// platform. WILL be called from ISR
+/// \post The EP state is automatically set to HalUsbEpStateValid
 void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoint, const void *aBuffer, size_t aSize,
 	int aIsData1);
-
-/// \brief Sets USB device address
 void halUsbDeviceSetAddress(struct HalUsbDeviceDriver *aDriver, uint8_t aAddress);
+
+/**
+ * @brief halUsbSetEpState sets EP state
+ * @param aDriver
+ * @param aEpState
+ */
+void halUsbSetEpState(struct HalUsbDeviceDriver *aDriver, uint8_t aEp, enum HalUsbEpState aEpStateIn,
+	enum HalUsbEpState aEpStateOut);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -8,17 +8,21 @@
 #ifndef SRC_TARGET_USBAD_SRC_USB_CONTROL_C_
 #define SRC_TARGET_USBAD_SRC_USB_CONTROL_C_
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (10)
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
+
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/usb.h"
 #include "utility/debug.h"
 #include "utility/ushelp.h"
-
-#define USBAD_DEBUG_REGDUMP_FIFO_SIZE (10)
 #include "utility/debug_regdump.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
 
 /****************************************************************************
  * Private Types
@@ -128,9 +132,11 @@ static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDri
 
 			if (setInterfaceValue == 0) {
 				usbMicrophoneSetEnabled(0);
+				halUsbSetEpState(&sEp0UsbDriver, 1, HalUsbEpStateDisabled, HalUsbEpStateDisabled);
 				usDebugPushMessage(getDebugToken(), "Disabled Audio");
 			} else if (setInterfaceValue == 1) {
 				usbMicrophoneSetEnabled(1);
+				halUsbSetEpState(&sEp0UsbDriver, 1, HalUsbEpStateValid, HalUsbEpStateDisabled);
 				usDebugPushMessage(getDebugToken(), "Enabled Audio");
 			} else {
 				debugRegdumpEnqueueI32Context("Incorrect interface setting index:", setInterfaceValue);
@@ -150,6 +156,15 @@ static inline void handleSetupBmRequestDevice(struct HalUsbDeviceDriver *aDriver
 	const struct SetupTransaction *aSetupTransaction, const void *aBuffer, size_t aSize)
 {
 	switch (aSetupTransaction->bRequest) {
+		case UsbBRequestGetStatus: {
+			usDebugPushMessage(0, "![usb] GET STATUS unsupprted");
+			/*
+			static const uint8_t status[] = {0, 0};
+			halUsbDeviceWriteTxIsr(aDriver, 0, status, US_ARRAY_SIZE(status),
+				!(aContext->onRxIsr.transactionFlags & HalUsbTransactionData1));
+			*/
+			break;
+		}
 		case UsbBRequestSetAddress:
 			sDriverState.address = aSetupTransaction->wValue;
 			// To finish status transaction

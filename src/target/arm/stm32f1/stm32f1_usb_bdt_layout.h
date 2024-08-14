@@ -20,6 +20,9 @@
 
 #define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
 
+/**
+ * @def Define RX = 0, and TX = N, to make 2 buffers to point at the same place
+ */
 #if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 0
 #  ifndef USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
 #    error USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE definition required
@@ -107,6 +110,7 @@ typedef struct {
 		volatile uint32_t countRx;
 	} bdt[8];
 
+	/* `/ 2`, because the API operates w/ bytes, but BDT uses 16-bit words */
 #if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 0
     volatile uint32_t ep0RxBuffer[USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE / 2];
     volatile uint32_t ep0TxBuffer[USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE_TX / 2];

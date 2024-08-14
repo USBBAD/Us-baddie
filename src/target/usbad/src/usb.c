@@ -20,6 +20,9 @@
 #define USBAD_USB_BUFFER_SIZE USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE
 #define USBAD_USB_MAX_ENDPOINTS USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS
 
+/**
+ * @def Configuration for "debug_regdump.h"
+ */
 #define USBAD_DEBUG_REGDUMP_FIFO_SIZE (4)
 
 /****************************************************************************
@@ -41,6 +44,20 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+enum StmUsbdState {
+	StmUsbdStateDisabled = 0b00,
+	StmUsbdStateValid = 0b11,
+	StmUsbdStateNak = 0b10,
+	StmUsbdStateStall = 0b01,
+};
+
+enum StmUsbdEpType {
+	StmUsbdEpTypeBulk = 0,
+	StmUsbdEpTypeControl = 1,
+	StmUsbdEpTypeIso = 2,
+	StmUsbdEpTypeInterrupt = 3,
+};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -65,34 +82,60 @@ static uint16_t sTransactBuffer[128] = {0};
  * Private Functions
  ****************************************************************************/
 
-/// \details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
+/**
+ * @brief USB_LP_CAN1_RX0_IRQHandler
+ * @details Handles low priority USB interrupts (RM0008 Rev 21 p 625)
+
+ */
 void USB_LP_CAN1_RX0_IRQHandler()
 {
 	volatile USB_TypeDef *usb = USB;
-	volatile uint16_t istr = usb->ISTR;
+	const uint16_t istr = usb->ISTR;
 	uint32_t deviceEvent = 0;
 	uint32_t endpointEvent = 0;
-	uint8_t endpointNumber = 0;
+	const uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
+	const uint16_t istrPmaOverrun = istr & USB_ISTR_PMAOVR;
+	const uint16_t istrEsof = istr & USB_ISTR_ESOF;
+	const uint16_t istrErr = istr & USB_ISTR_ERR;
+
+	/* Handle errors */
+	if (istrPmaOverrun) {
+		usDebugPushMessage(0, "![usb] PMAOVR");
+	}
+	if (istrEsof) {
+		usDebugPushMessage(0, "![usb] ESOF");
+	}
+	if (istrErr) {
+		usDebugPushMessage(0, "![usb] ERR");
+	}
+
+	if (endpointId != 0) {
+		debugRegdumpEnqueueI32Context("ISR for EP #", endpointId);
+	}
 
     usb->ISTR &= ~(USB_ISTR_SOF | USB_ISTR_ESOF | USB_ISTR_ERR | USB_ISTR_PMAOVR);
+    usb->CNTR |= USB_CNTR_SOFM;
 
 	// Handle reset transaction as per RM0008 rev 21 p 639
 	if (istr & USB_ISTR_RESET) {
         usb->ISTR &= ~(USB_ISTR_RESET | USB_ISTR_WKUP | USB_ISTR_SUSP);
         usb->CNTR &= ~(USB_CNTR_RESUME | USB_CNTR_FSUSP | USB_CNTR_LP_MODE | USB_CNTR_PDWN | USB_CNTR_FRES);
 
-		setEpxrEpType(0, 1);
-		setEpxrDtogTx(0, 1);
+		/* EP 0 */
+		setEpxrEpType(0, StmUsbdEpTypeControl);
+		setEpxrDtogRx(0, 0);
 		setEpxrDtogTx(0, 0);
-		setEpxrStatTx(0, 2);
-		setEpxrStatRx(0, 2);
+		setEpxrStatTx(0, StmUsbdStateNak);
+		setEpxrStatRx(0, StmUsbdStateNak);
 
-		setEpxrEpType(1, 2); /* ISOCH */
-		setEpxrStatTx(1, 2);
-		setEpxrStatRx(1, 2);
-		setEpxrDtogTx(1, 1);
-		setEpxrDtogTx(1, 1);
-		gUsbBdt->bdt[1].countTx = 0;
+		/* EP 1 */
+		gUsbBdt->bdt[1].countTx = USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX;
+		setEpxrEpType(1, StmUsbdEpTypeIso); /* ISOCH */
+		setEpxrDtogTx(1, 0);
+		setEpxrEa(1, 1);
+		/* The only valid states for ISOCH EPs are "Disabled", or "Valid" */
+		setEpxrStatRx(1, StmUsbdStateDisabled);
+		setEpxrStatTx(1, StmUsbdStateValid);
 
         usb->DADDR |= USB_DADDR_EF;
 
@@ -100,9 +143,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	}
 
 	if (istr & USB_ISTR_CTR) {
-		uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
-		uint16_t direction = (istr & USB_ISTR_DIR_Msk) >> USB_ISTR_DIR_Pos;
 		uint16_t epxr = *getEpxr(endpointId);
+
+		if (endpointId == 1) {
+			usDebugPushMessage(0, "EP 1 ISR");
+		}
 
 		usb->ISTR &= ~(USB_ISTR_CTR);
 
@@ -159,10 +204,13 @@ void USB_LP_CAN1_RX0_IRQHandler()
 
 static void debugPrintUsbBdtContent(const void *aArg)
 {
-	uint16_t usbBdtContent[64] = {0};
-	usStm32f1UsbReadBdt((uint16_t *)&usbBdtContent, 64, 0);
-	usvprintf("USB BDT content: ");
-	usDebugPrintU16Array(usbBdtContent, 64);
+	uint16_t usbBdtContent[16] = {0};
+	uint32_t offset = (uint32_t)aArg;
+	usStm32f1UsbReadBdt((uint16_t *)&usbBdtContent, US_ARRAY_SIZE(usbBdtContent), offset);
+	usvprintf("USB BDT content at offset ");
+	usDebugPrintHex32(offset);
+	usvprintf("");
+	usDebugPrintU16Array(usbBdtContent, US_ARRAY_SIZE(usbBdtContent));
 	usvprintf("\r\n");
 }
 
@@ -190,26 +238,42 @@ void usbInitialize()
 	usb->DADDR = 0;
 	usb->BTABLE = 0;
 
-	usStm32f1UsbSetBdt(0x0000, 64, 0);
+	usStm32f1UsbSetBdt(0, 256, 0);
+
+#if USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS > 2
+#error "STM32 buffer size setting is only impemented for 2 endpoints. Implement the other ones."
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_NENDPOINTS != 2 */
 
 	// Configure control endpoint BDT
+#if USBAD_STM32F1_USB_BDT_LAYOUT_EP0_BUFFER_SIZE == 64
 	setUsbCountnRx(usb, 0, (1 << 15) | (1 << 10));
+#else /* USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE == 64 */
+#error "The buffer size has to be adjusted accordingly"
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE == 64 */
 	setUsbCountnTx(usb, 0, 0);
-	setUsbAddrnRx(usb, 0, getEpxAddrnRxOffset(0));
-	setUsbAddrnTx(usb, 0, getEpxAddrnTxOffset(0));
 
 	// Configure isoch endpoint BDT
+#if USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX == 64
 	setUsbCountnRx(usb, 1, (1 << 15) | (1 << 10));
-	setUsbCountnTx(usb, 1, 0);
-	setUsbAddrnRx(usb, 1, getEpxAddrnRxOffset(1));
-	setUsbAddrnTx(usb, 1, getEpxAddrnTxOffset(1));
+#else /* USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE == 64 */
+#error "The buffer size has to be adjusted accordingly"
+#endif /* USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE == 64 */
+
+	/* Assign address to each EP */
+	for (int i = 0; i < 8; ++i) {
+		setEpxrEa(i, i);
+		setUsbAddrnTx(usb, i, getEpxAddrnTxOffset(i));
+		setUsbAddrnRx(usb, i, getEpxAddrnRxOffset(i));
+		setUsbCountnTx(usb, i, 0);
+	}
 
 	// Enable USB interrupts
 	usb->CNTR =
 		// Enable correct transfer interrupt
 		USB_CNTR_CTRM
 		// Enable reset interrupt
-		| USB_CNTR_RESETM;
+		| USB_CNTR_RESETM
+		| USB_CNTR_SOFM;
 
 	usDebugPushMessage(getDebugToken(), "Initialization completed");
 	usDebugAddTask(getDebugToken(), debugPrintUsbBdtContent, 0);
@@ -229,11 +293,10 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 {
 	// Copy data into USB buffer
 	volatile uint32_t *out = getTxBufferAhb(aEndpoint);
-
 	if (!out) {
-		usDebugPushMessage(0, "usb.c: couldn't get EP buffer");
+		usDebugPushMessage(0, "![usb] Couldn't get EP buffer");
+		return;
 	}
-
 	size_t remaining = aSize / 2;
 	for (const uint16_t *in = aBuffer; remaining; --remaining) {
 		*out = *in;
@@ -244,19 +307,52 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 		*out = ((const uint8_t *)aBuffer)[aSize - 1];
 	}
 
+#if 0
+	if (aEndpoint == 1) {
+		usDebugAddTask(getDebugToken(), debugPrintUsbBdtContent, (const void *)192);
+	}
+#endif
+
 	// Set counter
 	gUsbBdt->bdt[aEndpoint].countTx = aSize;
+
+#warning Target-specific code. Double buffer is used
+	if (aEndpoint == 1) {
+		gUsbBdt->bdt[1].countRx = aSize;
+		setEpxrStatRx(aEndpoint, StmUsbdStateValid);
+	}
+
 
 	// DATAx, set the correct type
 	setEpxrDtogTx(aEndpoint, aIsData1 ? 1 : 0);
 
 	// Enable TX transaction
-	setEpxrStatTx(aEndpoint, 3 /*valid*/);
+	setEpxrStatTx(aEndpoint, StmUsbdStateValid);
+
+#if 0 /* Debug: dump content */
+	if aBuffer(aEndpoint == 1) {
+		usDebugAddTask(getDebugToken(), debugPrintUsbBdtContent, (const void *)192);
+		usDebugAddTask(getDebugToken(), debugPrintUsbBdtContent, 0);
+	}
+#endif
 }
 
 void halUsbDeviceSetAddress(struct HalUsbDeviceDriver *aDriver, uint8_t aAddress)
 {
 	USB->DADDR |= aAddress & ((1 << 7) - 1);
+}
+
+void halUsbSetEpState(struct HalUsbDeviceDriver *aDriver, uint8_t aEp, enum HalUsbEpState aEpStateIn,
+	enum HalUsbEpState aEpStateOut)
+{
+	static const uint8_t stateMap[] = {
+		[HalUsbEpStateDisabled] = StmUsbdStateDisabled,
+		[HalUsbEpStateValid] = StmUsbdStateValid,
+		[HalUsbEpStateNak] = StmUsbdStateNak,
+		[HalUsbEpStateStall] = StmUsbdStateStall,
+	};
+	setEpxrStatRx(aEp, stateMap[aEpStateOut]);
+	setEpxrStatTx(aEp, stateMap[aEpStateIn]);
 }
 
 #endif  // SRC_TARGET_STM32F103C6_SRC_USB_C_

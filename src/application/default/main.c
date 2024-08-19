@@ -63,9 +63,10 @@ int main(void)
 	usDebugPushMessage(sToken, "System is up");
 	usbMicrophoneInitUsbDriver();
 	usbMicrophoneInitStub();
+	usDebugSetLed(0, 0);
 
 	while (1) {
-		usDebugIterDebugLoop();
+//		usDebugIterDebugLoop();
 	}
 
 	for (size_t i = 0;; ++i) {

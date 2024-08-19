@@ -69,6 +69,8 @@ static struct Ep1DriverState sEp1DriverState = {
 	},
 };
 
+static int sInitializeOnceFlag = 0;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -95,6 +97,10 @@ static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 	transmitBoundChecked();
 	if (isTxStateFinished() && gUsbMicrophoneHook) {
 		gUsbMicrophoneHook->onChunkTransmitted();
+	}
+	if (!usbMicrophoneIsEnabled()) {
+		sInitializeOnceFlag = 0;
+		halUsbSetEpState(&sep1UsbDriver, 1, HalUsbEpStateDisabled, HalUsbEpStateDisabled);
 	}
 	usDebugPushMessage(0, "[isoch] successfully transmitted");
 }
@@ -125,8 +131,7 @@ static inline size_t getTxStateRemainingBytes()
 static void transmitBoundChecked()
 {
 	const size_t bufferSize = US_MIN(getTxStateRemainingBytes(), EP1_BUFFER_SIZE);
-	if (bufferSize) {
-		debugRegdumpEnqueueI32Context("Sending # bytes:", (uint32_t)bufferSize);
+	if (bufferSize && sEp1DriverState.txState.current) {
 		halUsbDeviceWriteTxIsr(&sep1UsbDriver, 1, sEp1DriverState.txState.current, bufferSize, 0);
 		advanceTxState(bufferSize);
 	} else {
@@ -147,5 +152,9 @@ void initializeEp1UsbHalDeviceDriver()
 void usbMicrophoneSetMonoPcm16Buffer(const uint16_t *aBuffer, size_t aSize)
 {
 	setTxState((const uint8_t *)aBuffer, aSize * 2);
-	transmitBoundChecked();
+	if (!sInitializeOnceFlag) {
+		sInitializeOnceFlag = 1;
+		halUsbSetEpState(&sep1UsbDriver, 1, HalUsbEpStateValid, HalUsbEpStateDisabled);
+		transmitBoundChecked();
+	}
 }

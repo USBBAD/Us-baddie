@@ -146,15 +146,6 @@ gStm32VectorTable:
 	 .weak HardFault_Handler
 	.thumb_set HardFault_Handler,defaultIsrHandler
 
-	 .weak MemManage_Handler
-	.thumb_set MemManage_Handler,defaultIsrHandler
-
-	 .weak BusFault_Handler
-	.thumb_set BusFault_Handler,defaultIsrHandler
-
-	.weak UsageFault_Handler
-	.thumb_set UsageFault_Handler,defaultIsrHandler
-
 	.weak SVC_Handler
 	.thumb_set SVC_Handler,defaultIsrHandler
 

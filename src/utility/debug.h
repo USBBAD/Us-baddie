@@ -33,6 +33,7 @@ void usDebugIterDebugLoop();
 void usDebugPrintU8Array(const void *aData, size_t aDataLength);
 void usDebugPrintU16Array(const void *aData, size_t aDataLength);
 void usDebugPrintU32Array(const void *aData, size_t aDataLength);
+void usDebugSetLed(int aLed, int aState);
 
 static inline void usDebugPrintHex8(uint8_t hex)
 {

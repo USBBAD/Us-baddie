@@ -89,11 +89,8 @@ static uint16_t sTransactBuffer[128] = {0};
  */
 void USB_LP_CAN1_RX0_IRQHandler()
 {
-	volatile USB_TypeDef *usb = USB;
-	const uint16_t istr = usb->ISTR;
-	uint32_t deviceEvent = 0;
-	uint32_t endpointEvent = 0;
-	const uint8_t endpointId = (istr & USB_ISTR_EP_ID_Msk) >> USB_ISTR_EP_ID_Pos;
+	const uint16_t istr = USB->ISTR;
+	const uint8_t endpointId = istr & 0xf;
 	const uint16_t istrPmaOverrun = istr & USB_ISTR_PMAOVR;
 	const uint16_t istrEsof = istr & USB_ISTR_ESOF;
 	const uint16_t istrErr = istr & USB_ISTR_ERR;
@@ -109,17 +106,11 @@ void USB_LP_CAN1_RX0_IRQHandler()
 		usDebugPushMessage(0, "![usb] ERR");
 	}
 
-	if (endpointId != 0) {
-		debugRegdumpEnqueueI32Context("ISR for EP #", endpointId);
-	}
-
-    usb->ISTR &= ~(USB_ISTR_SOF | USB_ISTR_ESOF | USB_ISTR_ERR | USB_ISTR_PMAOVR);
-    usb->CNTR |= USB_CNTR_SOFM;
+    USB->ISTR &= ~(USB_ISTR_SOF | USB_ISTR_ESOF | USB_ISTR_ERR | USB_ISTR_PMAOVR);
+    USB->CNTR |= USB_CNTR_SOFM;
 
 	// Handle reset transaction as per RM0008 rev 21 p 639
 	if (istr & USB_ISTR_RESET) {
-        usb->ISTR &= ~(USB_ISTR_RESET | USB_ISTR_WKUP | USB_ISTR_SUSP);
-        usb->CNTR &= ~(USB_CNTR_RESUME | USB_CNTR_FSUSP | USB_CNTR_LP_MODE | USB_CNTR_PDWN | USB_CNTR_FRES);
 
 		/* EP 0 */
 		setEpxrEpType(0, StmUsbdEpTypeControl);
@@ -129,7 +120,8 @@ void USB_LP_CAN1_RX0_IRQHandler()
 		setEpxrStatRx(0, StmUsbdStateNak);
 
 		/* EP 1 */
-		gUsbBdt->bdt[1].countTx = USBAD_STM32F1_USB_BDT_LAYOUT_EP1_BUFFER_SIZE_TX;
+		gUsbBdt->bdt[1].countTx = 0;
+		gUsbBdt->bdt[1].countRx = 0;
 		setEpxrEpType(1, StmUsbdEpTypeIso); /* ISOCH */
 		setEpxrDtogTx(1, 0);
 		setEpxrEa(1, 1);
@@ -137,7 +129,8 @@ void USB_LP_CAN1_RX0_IRQHandler()
 		setEpxrStatRx(1, StmUsbdStateDisabled);
 		setEpxrStatTx(1, StmUsbdStateValid);
 
-        usb->DADDR |= USB_DADDR_EF;
+		USB->ISTR = 0;
+        USB->DADDR |= USB_DADDR_EF;
 
 		return;
 	}
@@ -145,14 +138,10 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	if (istr & USB_ISTR_CTR) {
 		uint16_t epxr = *getEpxr(endpointId);
 
-		if (endpointId == 1) {
-			usDebugPushMessage(0, "EP 1 ISR");
-		}
-
-		usb->ISTR &= ~(USB_ISTR_CTR);
+		USB->ISTR &= ~(USB_ISTR_CTR);
 
 		if (epxr & USB_EP0R_CTR_RX) {
-			uint16_t nWordsu16 = gUsbBdt->bdt[0].countRx & ((1 << 10) - 1);
+			uint16_t nWordsu16 = gUsbBdt->bdt[endpointId].countRx & ((1 << 10) - 1);
 			// Reset ISR flag
 			resetEpxrCtrRx(endpointId);
 
@@ -176,11 +165,13 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 			context.onRxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_RX ? 0 : HalUsbTransactionData1);
 
-			// Pass further handling to the driver
-			sHalUsbDrivers[endpointId]->onRxIsr(sHalUsbDrivers[endpointId], &context, sTransactBuffer,
-				nWordsu16 * 2);
+			if (sHalUsbDrivers[endpointId]) {
+				// Pass further handling to the driver
+				sHalUsbDrivers[endpointId]->onRxIsr(sHalUsbDrivers[endpointId], &context, sTransactBuffer,
+					nWordsu16 * 2);
+			}
 
-			setEpxrStatRx(0, 0b11); // Set STAT_RX valid (TODO: daedalean's version was setting STAT_TX)
+			setEpxrStatRx(endpointId, 0b11); // Set STAT_RX valid
 
 		} else if (epxr & USB_EP0R_CTR_TX) {
 			resetEpxrCtrTx(endpointId);
@@ -195,7 +186,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
 			// Upon successful reception, hardware toggles corresponding data bit, so the value is inverted (unless double buffer is used)
 			context.onTxIsr.transactionFlags |= (epxr & USB_EP0R_DTOG_TX ? 0 : HalUsbTransactionData1);
 
-			sHalUsbDrivers[endpointId]->onTxIsr(sHalUsbDrivers[endpointId], &context);
+			if (sHalUsbDrivers[endpointId]) {
+				sHalUsbDrivers[endpointId]->onTxIsr(sHalUsbDrivers[endpointId], &context);
+			}
 		}
 
 		return;
@@ -228,8 +221,7 @@ void usbInitialize()
 
 	rcc->APB1ENR |= RCC_APB1ENR_USBEN;
 	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
-	NVIC_EnableIRQ(USBWakeUp_IRQn);
+	NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 1);
 
 	// Keep in reset
 	usb->CNTR = USB_CNTR_FRES;
@@ -315,13 +307,6 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 
 	// Set counter
 	gUsbBdt->bdt[aEndpoint].countTx = aSize;
-
-#warning Target-specific code. Double buffer is used
-	if (aEndpoint == 1) {
-		gUsbBdt->bdt[1].countRx = aSize;
-		setEpxrStatRx(aEndpoint, StmUsbdStateValid);
-	}
-
 
 	// DATAx, set the correct type
 	setEpxrDtogTx(aEndpoint, aIsData1 ? 1 : 0);

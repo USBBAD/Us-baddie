@@ -22,6 +22,8 @@
 #include "target/target.h"
 #include "usb.h"
 
+extern void initializeGpio(void);
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -30,8 +32,8 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static void initializeBss();
-static void initializeData();
+static void initializeBss(void);
+static void initializeData(void);
 
 /****************************************************************************
  * Private Data
@@ -46,7 +48,7 @@ static void initializeData();
  ****************************************************************************/
 
 /// @brief Sets the entire .bss section w/ NULL
-static void initializeBss()
+static void initializeBss(void)
 {
 	// See the linker script where those symbols are defined
 	extern unsigned long int gBssStart;
@@ -59,7 +61,7 @@ static void initializeBss()
 }
 
 /// @brief Copies default values for .data section from flash memory
-static void initializeData()
+static void initializeData(void)
 {
 	// See the linker script where those symbols are defined
 	extern int gRamDataStart;
@@ -78,18 +80,20 @@ static void initializeData()
  * Public Functions
  ****************************************************************************/
 
-void memoryInitialize()
+void memoryInitialize(void)
 {
 	initializeBss();
 	initializeData();
 }
 
-void targetInitialize()
+
+void targetInitialize(void)
 {
 	clockInitialize();
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();
+	initializeGpio();
 	usbInitialize();
 	usbMicrophoneInitUsbDriver();
 	usbMicrophoneInitStub();

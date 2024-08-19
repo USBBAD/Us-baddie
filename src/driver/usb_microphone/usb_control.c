@@ -132,14 +132,12 @@ static inline void handleSetupBmRequestInterface(struct HalUsbDeviceDriver *aDri
 
 			if (setInterfaceValue == 0) {
 				usbMicrophoneSetEnabled(0);
-				halUsbSetEpState(&sEp0UsbDriver, 1, HalUsbEpStateDisabled, HalUsbEpStateDisabled);
 				usDebugPushMessage(getDebugToken(), "Disabled Audio");
 			} else if (setInterfaceValue == 1) {
 				usbMicrophoneSetEnabled(1);
-				halUsbSetEpState(&sEp0UsbDriver, 1, HalUsbEpStateValid, HalUsbEpStateDisabled);
 				usDebugPushMessage(getDebugToken(), "Enabled Audio");
 			} else {
-				debugRegdumpEnqueueI32Context("Incorrect interface setting index:", setInterfaceValue);
+				debugRegdumpEnqueueI32Context("Incorrect interface index:", setInterfaceValue);
 			}
 
 			/* Respond w/ ZLP */

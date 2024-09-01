@@ -45,6 +45,7 @@ extern void stm32f103c6DmaUpAdc(uint16_t *aDmaBuf, size_t aDmaBufSize, void(*aOn
 
 void stm32f103c6AdcUp(volatile ADC_TypeDef *aAdc, const uint8_t *aChannels, size_t aChannelsSize)
 {
+	/* TODO: adjust ADC frequency, to match w/ USB speed, so a complete 64-byte frame is sent on each SOF */
 	US_ASSERT(aChannels);
 
 	NVIC_EnableIRQ(ADC1_2_IRQn);

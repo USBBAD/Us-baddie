@@ -1,19 +1,17 @@
-//
-// usb_microphone.h
-//
-// Created on: July 26, 2024
-//     Author: Dmitry Murashov
-//
+/**
+ * stereo.h
+ *
+ * Created on: September 01, 2024
+ *     Author: Dmitry Murashov
+ */
 
-#ifndef SRC_DRIVER_USB_MICROPHONE_USB_MICROPHONE_H_
-#define SRC_DRIVER_USB_MICROPHONE_USB_MICROPHONE_H_
+#ifndef SRC_DRIVER_USB_MICROPHONE_STEREO_H_
+#define SRC_DRIVER_USB_MICROPHONE_STEREO_H_
 
 /****************************************************************************
 * Included Files
 ****************************************************************************/
 
-#include "driver/usb_microphone/usb_control.h"
-#include "driver/usb_microphone/usb_isoch.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -25,12 +23,12 @@
 * Public Types
 ****************************************************************************/
 
-struct UsbMicrophoneHook {
-	void (*onEnabledStateChangedIsr)(int aEnabled); /**< Gets invoked each time driver functionality enabled-state gets changed */
-	void (*onChunkTransmitted)(); /**< Gets invoked each time a chunk has been transmitted, so the next one is to be prepared */
-};
-
 #ifndef __ASSEMBLY__
+
+struct UsbMicrophoneStereo {
+	const uint16_t *buffer;
+	size_t size;
+};
 
 /****************************************************************************
 * Public Data
@@ -48,26 +46,11 @@ extern "C"
 * Public Function Prototypes
 ****************************************************************************/
 
-void usbMicrophoneSetMonoPcm16Buffer(const uint16_t *aBuffer, size_t aSize);
-void usbMicrophoneSetEnabled(int aEnabled);
-int usbMicrophoneIsEnabled();
-void usbMicrophoneSetHook(struct UsbMicrophoneHook *aHook);
+void usbMicrophoneInitStereo(struct UsbMicrophoneStereo *aStereo);
 
 /****************************************************************************
  * Inline Functions
  ****************************************************************************/
-
-static inline void usbMicrophoneInitUsbDriver()
-{
-	initializeEp0UsbHalDeviceDriver();
-	initializeEp1UsbHalDeviceDriver();
-}
-
-static void usbMicrophoneSetStereoPcm16Buffer(const uint16_t *aBuffer, size_t aSize)
-{
-	/* TODO: write the actual stereo implementation */
-	usbMicrophoneSetMonoPcm16Buffer(aBuffer, aSize);
-}
 
 #undef EXTERN
 #ifdef __cplusplus
@@ -76,4 +59,4 @@ static void usbMicrophoneSetStereoPcm16Buffer(const uint16_t *aBuffer, size_t aS
 
 #endif  /* __ASSEMBLY__ */
 
-#endif  // SRC_DRIVER_USB_MICROPHONE_USB_MICROPHONE_H_
+#endif /* SRC_DRIVER_USB_MICROPHONE_STEREO_H_ */

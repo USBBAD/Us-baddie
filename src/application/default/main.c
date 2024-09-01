@@ -1,11 +1,20 @@
-//
-// main.c
-//
-// Created: 2023-10-11
-//  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
-//
+/*
+ * main.c
+ *
+ * Created: 2023-10-11
+ *  Author: Dmitry Murashov
+ */
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
 
 #include "application/default/target.h"
+#include "driver/usb_microphone/stereo.h"
 #include "driver/usb_microphone/stub.h"
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/adc.h"
@@ -17,16 +26,38 @@
 #include "utility/ushelp.h"
 #include "utility/usvprintf.h"
 
-static uint16_t audioBuffer[2] = {0};
-static int sToken = -1;
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+static uint16_t audioBuffer[2] = {0}; /**< 64 is the required size for the buffer (see usb_microphone driver, usb_control.c) */
+static struct UsbMicrophoneStereo sUsbMicrophoneStereo = {
+	.buffer = audioBuffer,
+	.size = US_ARRAY_SIZE(audioBuffer),
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 void onAdcDmaIsr()
 {
-	usDebugPushMessage(sToken, "got DMA ISR");
+	usDebugPushMessage(0, "got DMA ISR");
 	uint16_t *buffer = dmaGetBufferIsr(1, 1);
 	audioBuffer[0] = buffer[0];
 	audioBuffer[1] = buffer[1];
-	adcStopIsr();
 }
 
 size_t uartPuts(const char *aBuffer, size_t aBufferLen)
@@ -88,12 +119,17 @@ int main(void)
 	usvprintfSetPuts(uartPuts);
 	dmaSetIsrHook(1, 1, onAdcDmaIsr);
 	adcStart();
-	usDebugAddTask(sToken, printStarted, 0);
-	usDebugPushMessage(sToken, "System is up");
+	usDebugAddTask(0, printStarted, 0);
+	usDebugPushMessage(0, "System is up");
 	usbMicrophoneInitUsbDriver();
 	usbMicrophoneInitStub();
+	usbMicrophoneInitStereo(&sUsbMicrophoneStereo);
 	usDebugSetLed(0, 0);
 
 	taskRunAudio();
 	taskRunSystick();
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/

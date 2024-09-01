@@ -30,7 +30,7 @@
  * Private Types
  ****************************************************************************/
 
-static uint16_t audioBuffer[2] = {0}; /**< 64 is the required size for the buffer (see usb_microphone driver, usb_control.c) */
+static uint16_t audioBuffer[64] = {0}; /**< 64 is the required size for the buffer (see usb_microphone driver, usb_control.c) */
 static struct UsbMicrophoneStereo sUsbMicrophoneStereo = {
 	.buffer = audioBuffer,
 	.size = US_ARRAY_SIZE(audioBuffer),

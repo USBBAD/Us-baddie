@@ -8,6 +8,10 @@
 #ifndef USBAD_COMMON_HAL_ADC_H_
 #define USBAD_COMMON_HAL_ADC_H_
 
+#include "us_error.h"
+#include <stddef.h>
+#include <stdint.h>
+
 void adcStart();
 void adcStopIsr();
 

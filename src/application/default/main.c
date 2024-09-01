@@ -5,6 +5,7 @@
 //  Author: Dmitry Murashov (dmtr <DOT> murashov <AT> GMAIL)
 //
 
+#include "application/default/target.h"
 #include "driver/usb_microphone/stub.h"
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/adc.h"
@@ -13,6 +14,7 @@
 #include "system/time.h"
 #include "target/target.h"
 #include "utility/debug.h"
+#include "utility/ushelp.h"
 #include "utility/usvprintf.h"
 
 static uint16_t audioBuffer[2] = {0};
@@ -78,12 +80,11 @@ static void taskRunAudio()
 int main(void)
 {
 	int val = 10;
-	memoryInitialize();
-	sToken = usDebugRegisterToken("application");
-	targetInitialize();
+	/* Hardware initialization */
+	targetInitialize(audioBuffer, US_ARRAY_SIZE(audioBuffer), onAdcDmaIsr);
 	uartConfigure(1, 921600);
 
-	// Configure logging
+	/* Configure logging */
 	usvprintfSetPuts(uartPuts);
 	dmaSetIsrHook(1, 1, onAdcDmaIsr);
 	adcStart();

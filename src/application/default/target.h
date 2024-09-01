@@ -12,7 +12,7 @@
 
 /// \brief Performs all the target-dependent initialization
 /// \returns Target handle, if successful. 0 otherwise
-void targetInitialize();
 void memoryInitialize();
+void targetInitialize(uint16_t *aAdcBuf, size_t aAdcBufSize, void(*aOnAdcCompleted)());
 
 #endif  // USBAD_SRC_COMMON_TARGET_TARGET_H_

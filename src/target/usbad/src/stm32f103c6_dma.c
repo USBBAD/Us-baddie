@@ -34,74 +34,57 @@ void dma1Channel1Isr()
 {
 	volatile DMA_TypeDef *dma = DMA1;
 
-	// TODO: clear ISR (check if it is needed at all)
-	// TODO: restart DMA (if not in circular mode)
+	/* TODO: clear ISR (check if it is needed at all) */
+	/* TODO: restart DMA (if not in circular mode) */
 	if (sDma1Channel1IsrHook && (dma->ISR & DMA_ISR_TCIF1)) {
 		sDma1Channel1IsrHook();
 	}
 
-	// clear DMA interrupts for channel 1
+	/* clear DMA interrupts for channel 1 */
 	dma->IFCR = DMA_IFCR_CGIF1;
 }
 
-/// \brief 2 audio channels are processed by DMA 1 which is wired to DMA
-/// channel
-///
 /// \details
 /// - 16 bit memory size
 /// - 16 bit peripheral size
 /// - Circular mode, auto memory increment (16 bit + 16 bit for each of 2 audio channels)
-///
 /// \ref See RM0008 Rev 21 p. 278 ("Channel configuration procedure")
-static void configureAudio()
+void stm32f103c6DmaUpAdc(uint16_t *aDmaBuf, size_t aDmaBufSize, void(*aOnDmaFinishedHook)(),
+	volatile ADC_TypeDef *aAdc)
 {
 	volatile DMA_Channel_TypeDef *dmaChannel = DMA1_Channel1;
-
-	// Set peripheral address: ADC1
-	// TODO XXX: 16 bits, data alignment
-	dmaChannel->CPAR = (uintptr_t)(&(ADC1->DR));
-
-	// Set memory address (audio buffer stored values)
-	// TODO XXX: check for possible memory alignment issues
-	dmaChannel->CMAR = (uintptr_t)sDma1Channel1Buffer;
-
-	// Set the number of transfers: 2, 16 bit per each audio channel
-	dmaChannel->CNDTR = 2;
-
-	// set max priority
-	dmaChannel->CCR |= DMA_CCR_PL;
-
-	// Set 16 bit memory size
-	dmaChannel->CCR |= DMA_CCR_MSIZE_0;
-
-	// Set 16 bit peripheral size
-	dmaChannel->CCR |= DMA_CCR_PSIZE_0;
-
-	// Enable automatic memory increment
-	dmaChannel->CCR |= DMA_CCR_MINC;
-
-	// Enable circular mode
-	dmaChannel->CCR |= DMA_CCR_CIRC;
-
-	// Enable inerrupt on "Transfer complete" event
-	dmaChannel->CCR |= DMA_CCR_TCIE
-		// Enable interrupt on "Transfer error"
-		| DMA_CCR_TEIE;
-
-	// Enable channel
-	dmaChannel->CCR |= DMA_CCR_EN;
-}
-
-void stm32f103c6DmaUp()
-{
 	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 	NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
-	configureAudio();
+	sDma1Channel1IsrHook = aOnDmaFinishedHook;
+
+	/* Set peripheral address: ADC1 */
+	dmaChannel->CPAR = (uintptr_t)(&(aAdc->DR));
+
+	/* Set memory address (audio buffer stored values) */
+	dmaChannel->CMAR = (uintptr_t)aDmaBuf;
+	/* Set the number of transfers: 2, 16 bit per each audio channel */
+	dmaChannel->CNDTR = aDmaBufSize;
+	/* set max priority */
+	dmaChannel->CCR |= DMA_CCR_PL;
+	/* Set 16 bit memory size */
+	dmaChannel->CCR |= DMA_CCR_MSIZE_0;
+	/* Set 16 bit peripheral size */
+	dmaChannel->CCR |= DMA_CCR_PSIZE_0;
+	/* Enable automatic memory increment */
+	dmaChannel->CCR |= DMA_CCR_MINC;
+	/* Enable circular mode */
+	dmaChannel->CCR |= DMA_CCR_CIRC;
+	/* Enable inerrupt on "Transfer complete" event */
+	dmaChannel->CCR |= DMA_CCR_TCIE
+		/* Enable interrupt on "Transfer error" */
+		| DMA_CCR_TEIE;
+	/* Enable channel */
+	dmaChannel->CCR |= DMA_CCR_EN;
 }
 
 void *dmaGetBufferIsr(int aDma, int aDmaChannel)
 {
-	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
+	/* Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>) */
 	switch (aDma << 8 & aDmaChannel) {
 		case (1 << 8) & 1:
 			return sDma1Channel1Buffer;

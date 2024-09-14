@@ -10,11 +10,9 @@
 
 #include "hal/adc.h"
 
-
 /// \brief Performs all the target-dependent initialization
 /// \returns Target handle, if successful. 0 otherwise
 void targetInitialize();
-
 void memoryInitialize();
 
 #endif  // USBAD_SRC_COMMON_TARGET_TARGET_H_

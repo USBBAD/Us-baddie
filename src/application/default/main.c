@@ -10,6 +10,7 @@
 #include "hal/adc.h"
 #include "hal/dma.h"
 #include "hal/uart.h"
+#include "system/time.h"
 #include "target/target.h"
 #include "utility/debug.h"
 #include "utility/usvprintf.h"
@@ -47,6 +48,24 @@ static void printStarted(const void *aArg)
 	usvprintf("Application started\r\n");
 }
 
+static void taskRunSystick()
+{
+	for (uint64_t prevUptime = 0;;) {
+		uint64_t now = timeGetUptimeUs();
+		if (now - prevUptime > 1000000UL) {
+			prevUptime = now;
+			usvprintf("uptime %d \r\n", (uint32_t)now);
+		}
+	}
+}
+
+static void taskRunAudio()
+{
+	for (size_t i = 0;; ++i) {
+		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
+	}
+}
+
 int main(void)
 {
 	int val = 10;
@@ -65,11 +84,6 @@ int main(void)
 	usbMicrophoneInitStub();
 	usDebugSetLed(0, 0);
 
-	while (1) {
-//		usDebugIterDebugLoop();
-	}
-
-	for (size_t i = 0;; ++i) {
-		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
-	}
+	taskRunSystick();
+//	taskRunAudio();
 }

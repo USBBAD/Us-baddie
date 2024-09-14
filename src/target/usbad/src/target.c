@@ -19,6 +19,7 @@
 #include "stm32f103c6_adc.h"
 #include "stm32f103c6_dma.h"
 #include "stm32f103c6_uart.h"
+#include "target/arm/stm32f1/systick.h"
 #include "target/target.h"
 #include "usb.h"
 
@@ -86,10 +87,10 @@ void memoryInitialize(void)
 	initializeData();
 }
 
-
 void targetInitialize(void)
 {
 	clockInitialize();
+	systickInit(100);
 	stm32f103c6DmaUp();
 	stm32f103c6AdcUp();
 	uartUp();

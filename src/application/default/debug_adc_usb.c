@@ -66,7 +66,7 @@ void taskRunAudio(void)
 
 		const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1);
 		usvprintf("Audio L, R, L, R,...");
-		usDebugPrintU16Array(dmaBuffer, 16);
+		usDebugPrintU16Array(dmaBuffer, 32);
 		usvprintf("\r\n");
 	}
 }

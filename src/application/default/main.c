@@ -21,7 +21,6 @@
 #include "hal/dma.h"
 #include "hal/uart.h"
 #include "system/time.h"
-#include "target/target.h"
 #include "utility/debug.h"
 #include "utility/ushelp.h"
 #include "utility/usvprintf.h"

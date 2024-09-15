@@ -21,7 +21,6 @@
 #include "stm32f103c6_dma.h"
 #include "stm32f103c6_uart.h"
 #include "target/arm/stm32f1/systick.h"
-#include "target/target.h"
 #include "usb.h"
 #include "utility/ushelp.h"
 #include <stm32f103x6.h>
@@ -90,27 +89,15 @@ static void memoryInitialize(void)
 	initializeData();
 }
 
-<<<<<<< HEAD
-void targetInitialize(void)
-=======
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 void targetInitialize(uint16_t *aAdcBuf, size_t aAdcBufSize, void(*aOnAdcCompleted)())
->>>>>>> [application target hal stm32f1 usbad src] Enh | Parameterized ADC configuration
 {
 	static const uint8_t adcChannels[] = {1, 2}; /* TODO: Check if correct channels*/
 	memoryInitialize();
 	clockInitialize();
-<<<<<<< HEAD
 	systickInit(100);
-	stm32f103c6DmaUp();
-	stm32f103c6AdcUp();
-=======
 	stm32f103c6AdcUp(ADC1, adcChannels, US_ARRAY_SIZE(adcChannels));
 	stm32f103c6DmaUpAdc(aAdcBuf, aAdcBufSize, aOnAdcCompleted, ADC1);
->>>>>>> [application target hal stm32f1 usbad src] Enh | Parameterized ADC configuration
 	uartUp();
 	initializeGpio();
 	usbInitialize();

@@ -1,9 +1,12 @@
 /**
- * main.c
+ * debug_adc_usb.c
  *
- * Created: 2023-10-11
- *  Author: Dmitry Murashov
+ * Created on: September 15, 2024
+ *     Author: Dmitry Murashov
  */
+
+#ifndef SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_
+#define SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -13,15 +16,10 @@
  * Included files
  ****************************************************************************/
 
-#include "driver/usb_microphone/stub.h"
-#include "driver/usb_microphone/usb_microphone.h"
-#include "hal/uart.h"
+#include "hal/adc.h"
+#include "hal/dma.h"
 #include "system/time.h"
-#include "target/target.h"
 #include "utility/debug.h"
-#include "utility/usvprintf.h"
-
-extern void taskRunAudio(void);
 
 /****************************************************************************
  * Private Types
@@ -35,6 +33,8 @@ extern void taskRunAudio(void);
  * Private Data
  ****************************************************************************/
 
+static uint16_t audioBuffer[2] = {0};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -43,48 +43,34 @@ extern void taskRunAudio(void);
  * Private Functions
  ****************************************************************************/
 
-/**
- * @todo move into target/
- */
-size_t uartPuts(const char *aBuffer, size_t aBufferLen)
+static void onAdcDmaIsr(void)
 {
-	if (uartTryPutsLen(1, aBuffer, aBufferLen)) {
-		uartBusyWaitForWritten(1);
-		return aBufferLen;
-	}
-	return 0U;
-}
-
-static void taskRunSystick()
-{
-	for (uint64_t prevUptime = 0;;) {
-		uint64_t now = timeGetUptimeUs();
-		if (now - prevUptime > 1000000UL) {
-			prevUptime = now;
-			usvprintf("uptime %d \r\n", (uint32_t)now);
-		}
-	}
-}
-
-int main(void)
-{
-	int val = 10;
-	memoryInitialize();
-	targetInitialize();
-	uartConfigure(1, 921600);
-
-	// Configure logging
-	usvprintfSetPuts(uartPuts);
-	adcStart();
-	usDebugPushMessage(0, "System is up");
-	usbMicrophoneInitUsbDriver();
-	usbMicrophoneInitStub();
-	usDebugSetLed(0, 0);
-
-	taskRunAudio();
-	taskRunSystick();
+	usDebugPushMessage(0, "got DMA ISR");
+	uint16_t *buffer = dmaGetBufferIsr(1, 1);
+	audioBuffer[0] = buffer[0];
+	audioBuffer[1] = buffer[1];
+	adcStopIsr();
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+void taskRunAudio(void)
+{
+	dmaSetIsrHook(1, 1, onAdcDmaIsr);
+	const uint64_t kMultisamplePeriodUs = 200000;
+	uint64_t now = timeGetUptimeUs();
+	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
+	while (1) {
+		now = timeGetUptimeUs();
+		if (now > nextSampleTimestamp) {
+			nextSampleTimestamp = now + kMultisamplePeriodUs;
+			adcStart();
+		} else {
+			usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
+		}
+	}
+}
+
+#endif /* SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_ */

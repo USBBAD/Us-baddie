@@ -5,17 +5,49 @@
 //     Author: Dmitry Murashov (dmtr <DOT> murashov <AT> <GMAIL> <DOT> <COM>)
 //
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define DMA_U16_BUFIZE (2) /**< Buffer size for converted audio */
+#define NCONVERSIONS (DMA_U16_BUFIZE)
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
+
 #include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>
 
-/// \def Buffer size for converted audio
-#define USBAD_DMA1_CHANNEL1_BUFFER_SIZE_BYTES (16 * 2)
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
-static uint16_t sDma1Channel1Buffer[2] = {0};
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static uint16_t sDma1Channel1Buffer[DMA_U16_BUFIZE] = {0};
 static void configureAudio();
 typedef void (*DmaHookCallback)();
 static void (*sDma1Channel1IsrHook)();
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 void dmaSetIsrHook(int aDma, int aChannel, DmaHookCallback aCallback)
 {
@@ -65,8 +97,8 @@ static void configureAudio()
 	// TODO XXX: check for possible memory alignment issues
 	dmaChannel->CMAR = (uintptr_t)sDma1Channel1Buffer;
 
-	// Set the number of transfers: 2, 16 bit per each audio channel
-	dmaChannel->CNDTR = 2;
+	// Set the number of transfers, 16 bit per each audio channel
+	dmaChannel->CNDTR = NCONVERSIONS;
 
 	// set max priority
 	dmaChannel->CCR |= DMA_CCR_PL;

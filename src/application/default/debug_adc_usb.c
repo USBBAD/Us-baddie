@@ -64,12 +64,9 @@ void taskRunAudio(void)
 	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
 	while (1) {
 		now = timeGetUptimeUs();
-		if (now > nextSampleTimestamp) {
-			nextSampleTimestamp = now + kMultisamplePeriodUs;
-			adcStart();
-		} else {
-			usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
-		}
+		adcStart();
+		timeBusywaitUs(200000);
+		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
 	}
 }
 

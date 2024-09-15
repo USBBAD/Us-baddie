@@ -61,8 +61,17 @@ static void taskRunSystick()
 
 static void taskRunAudio()
 {
-	for (size_t i = 0;; ++i) {
-		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
+	const uint64_t kMultisamplePeriodUs = 200000;
+	uint64_t now = timeGetUptimeUs();
+	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
+	while (1) {
+		now = timeGetUptimeUs();
+		if (now > nextSampleTimestamp) {
+			nextSampleTimestamp = now + kMultisamplePeriodUs;
+			adcStart();
+		} else {
+			usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
+		}
 	}
 }
 
@@ -84,6 +93,6 @@ int main(void)
 	usbMicrophoneInitStub();
 	usDebugSetLed(0, 0);
 
+	taskRunAudio();
 	taskRunSystick();
-//	taskRunAudio();
 }

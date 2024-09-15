@@ -9,7 +9,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define DMA_U16_BUFIZE (32) /**< Buffer size for converted audio */
+#define DMA_U16_BUFIZE (64) /**< Buffer size for converted audio */
 #define NCONVERSIONS (DMA_U16_BUFIZE)
 
 /****************************************************************************

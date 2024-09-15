@@ -1,12 +1,12 @@
 /**
- * debug_adc_usb.c
+ * audio.c
  *
  * Created on: September 15, 2024
  *     Author: Dmitry Murashov
  */
 
-#ifndef SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_
-#define SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_
+#ifndef SRC_DRIVER_USB_MICROPHONE_AUDIO_C_
+#define SRC_DRIVER_USB_MICROPHONE_AUDIO_C_
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -16,10 +16,9 @@
  * Included files
  ****************************************************************************/
 
-#include "hal/adc.h"
-#include "hal/dma.h"
-#include "system/time.h"
-#include "utility/debug.h"
+#include "driver/usb_microphone/usb_microphone.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /****************************************************************************
  * Private Types
@@ -29,9 +28,23 @@
  * Private Function Prototypes
  ****************************************************************************/
 
+static void onEnabledStateChangedIsr(int aEnabled);
+static void onChunkTransmitted();
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/** \struct UsbMicrophoneHook is a high-level driver that handles buffer management
+ * during audio transmission
+ */
+static struct UsbMicrophoneHook sUsbMicrophoneHook = {
+	.onChunkTransmitted = onChunkTransmitted,
+	.onEnabledStateChangedIsr = onEnabledStateChangedIsr,
+};
+
+static const uint16_t *sMonoPcmBuf; /**< A pointer to external buffer */
+static size_t sMonoPcmBufSize;
 
 /****************************************************************************
  * Public Data
@@ -41,33 +54,30 @@
  * Private Functions
  ****************************************************************************/
 
-static void onAdcDmaIsr(void)
+void onEnabledStateChangedIsr(int aEnabled)
 {
-//	usDebugPushMessage(0, "got DMA ISR");
-	adcStopIsr();
+	if (aEnabled) {
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
+	}
+}
+
+void onChunkTransmitted()
+{
+	if (usbMicrophoneIsEnabled()) {
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
+	}
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void taskRunAudio(void)
+void usbMicrophoneInitAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize)
 {
-	const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1);
-	usbMicrophoneInitAudio(dmaBuffer, 32);
-	dmaSetIsrHook(1, 1, onAdcDmaIsr);
-	const uint64_t kMultisamplePeriodUs = 200000;
-	uint64_t now = timeGetUptimeUs();
-	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
-	while (1) {
-		now = timeGetUptimeUs();
-		adcStart();
-		timeBusywaitUs(200000);
-
-		usvprintf("Audio L, R, L, R,...");
-		usDebugPrintU16Array(dmaBuffer, 64);
-		usvprintf("\r\n");
-	}
+	sMonoPcmBuf = aMonoPcmBuf;
+	sMonoPcmBufSize = aBufSize;
+	usbMicrophoneSetHook(&sUsbMicrophoneHook);
 }
 
-#endif /* SRC_APPLICATION_DEFAULT_DEBUG_ADC_USB_C_ */
+#endif /* SRC_DRIVER_USB_MICROPHONE_AUDIO_C_ */
+

@@ -1,18 +1,19 @@
 /**
- * stub.h
+ * audio.h
  *
- * Created on: July 31, 2024
+ * Created on: September 15, 2024
  *     Author: Dmitry Murashov
- * 
- * Stub driver
  */
 
-#ifndef SRC_DRIVER_USB_MICROPHONE_STUB_H_
-#define SRC_DRIVER_USB_MICROPHONE_STUB_H_
+#ifndef SRC_DRIVER_USB_MICROPHONE_AUDIO_H_
+#define SRC_DRIVER_USB_MICROPHONE_AUDIO_H_
 
 /****************************************************************************
 * Included Files
 ****************************************************************************/
+
+#include <stdint.h>
+#include <stddef.h>
 
 /****************************************************************************
 * Pre-processor Definitions
@@ -40,11 +41,7 @@ extern "C"
 * Public Function Prototypes
 ****************************************************************************/
 
-/**
- * @brief usbMicrophoneInitStub Initializes stub microphone functionality
- * which transmits some artificially-generated soundwave
- */
-void usbMicrophoneInitStub();
+void usbMicrophoneInitAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize);
 
 /****************************************************************************
  * Inline Functions
@@ -57,4 +54,5 @@ void usbMicrophoneInitStub();
 
 #endif  /* __ASSEMBLY__ */
 
-#endif /* SRC_DRIVER_USB_MICROPHONE_STUB_H_ */
+#endif /* SRC_DRIVER_USB_MICROPHONE_AUDIO_H_ */
+

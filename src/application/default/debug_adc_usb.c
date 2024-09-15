@@ -45,10 +45,7 @@ static uint16_t audioBuffer[2] = {0};
 
 static void onAdcDmaIsr(void)
 {
-	usDebugPushMessage(0, "got DMA ISR");
-	uint16_t *buffer = dmaGetBufferIsr(1, 1);
-	audioBuffer[0] = buffer[0];
-	audioBuffer[1] = buffer[1];
+//	usDebugPushMessage(0, "got DMA ISR");
 	adcStopIsr();
 }
 
@@ -66,7 +63,11 @@ void taskRunAudio(void)
 		now = timeGetUptimeUs();
 		adcStart();
 		timeBusywaitUs(200000);
-		usvprintf("Audio L %u R %u\r\n", audioBuffer[0], audioBuffer[1]);
+
+		const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1);
+		usvprintf("Audio L, R, L, R,...");
+		usDebugPrintU16Array(dmaBuffer, 16);
+		usvprintf("\r\n");
 	}
 }
 

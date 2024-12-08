@@ -58,6 +58,9 @@ void sysStatPrint()
 	usvprintf("mic. en.:   ");
 	usDebugPrintHex8(usbMicrophoneIsEnabled());
 	usvprintf("\r\n");
+	usvprintf("USB errors: ");
+	usDebugPrintHex32(gSysStat.usbErr);
+	usvprintf("\r\n");
 }
 
 void sysStatReset()

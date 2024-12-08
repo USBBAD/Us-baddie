@@ -21,8 +21,14 @@
 /****************************************************************************
 * Public Types
 ****************************************************************************/
+
+enum StatUsbErr {
+	StatUsbErrNoEpBuffer = 0x1,
+};
+
 struct Stat {
 	uint32_t usbIsochPackets; /**< # Of USB ISOCH packets */
+	enum StatUsbErr usbErr;
 };
 
 #ifndef __ASSEMBLY__

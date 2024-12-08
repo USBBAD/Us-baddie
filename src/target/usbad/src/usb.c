@@ -34,6 +34,7 @@
 #include "arm/stm32f1/stm32f1_usb.h"
 #include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include "hal/usb.h"
+#include "system/stat.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/fifo.h"
@@ -291,6 +292,7 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 	volatile uint32_t *out = getTxBufferAhb(aEndpoint);
 	if (!out) {
 		usDebugPushMessage(0, "![usb] Couldn't get EP buffer");
+		gSysStat.usbErr |= StatUsbErrNoEpBuffer;
 		return;
 	}
 	size_t remaining = aSize / 2;

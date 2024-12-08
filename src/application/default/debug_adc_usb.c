@@ -16,6 +16,7 @@
  * Included files
  ****************************************************************************/
 
+#include "driver/usb_microphone/audio.h"
 #include "hal/adc.h"
 #include "hal/dma.h"
 #include "system/stat.h"

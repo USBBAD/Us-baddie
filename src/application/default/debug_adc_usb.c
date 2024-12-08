@@ -53,8 +53,9 @@ static void onAdcDmaIsr(void)
 
 void taskRunAudio(void)
 {
-	const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1);
-	usbMicrophoneInitAudio(dmaBuffer, 32);
+	uint16_t dmaBufSz;
+	const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1, &dmaBufSz);
+	usbMicrophoneInitAudio(dmaBuffer, dmaBufSz);
 	dmaSetIsrHook(1, 1, onAdcDmaIsr);
 	const uint64_t kMultisamplePeriodUs = 200000;
 	uint64_t now = timeGetUptimeUs();

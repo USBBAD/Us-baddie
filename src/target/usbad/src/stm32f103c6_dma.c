@@ -131,7 +131,7 @@ void stm32f103c6DmaUp()
 	configureAudio();
 }
 
-void *dmaGetBufferIsr(int aDma, int aDmaChannel)
+void *dmaGetBufferIsr(int aDma, int aDmaChannel, uint16_t *aOutDmaBufferSize)
 {
 	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
 	switch (aDma << 8 & aDmaChannel) {

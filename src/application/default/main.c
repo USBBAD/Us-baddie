@@ -13,8 +13,10 @@
  * Included files
  ****************************************************************************/
 
+#include "driver/usb_microphone/audio.h"
 #include "driver/usb_microphone/stub.h"
 #include "driver/usb_microphone/usb_microphone.h"
+#include "hal/dma.h"
 #include "hal/uart.h"
 #include "system/time.h"
 #include "target/target.h"
@@ -78,7 +80,16 @@ int main(void)
 	adcStart();
 	usDebugPushMessage(0, "System is up");
 	usbMicrophoneInitUsbDriver();
-	usbMicrophoneInitStub();
+	{
+		uint16_t dmaBufSz;
+		void *dmaBuffer = dmaGetBufferIsr(1, 1, &dmaBufSz);
+		if (dmaBuffer) {
+			usbMicrophoneInitAudio(dmaBuffer, dmaBufSz);
+		} else {
+			while (1);
+			// TODO: Panic
+		}
+	}
 	usDebugSetLed(0, 0);
 
 	taskRunAudio();

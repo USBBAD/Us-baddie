@@ -72,6 +72,7 @@ void taskRunAudio(void)
 		usvprintf("\r\n");
 #endif
 		sysStatPrint();
+//		usDebugIterDebugLoop();
 	}
 }
 

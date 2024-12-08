@@ -134,8 +134,8 @@ void stm32f103c6DmaUp()
 void *dmaGetBufferIsr(int aDma, int aDmaChannel, uint16_t *aOutDmaBufferSize)
 {
 	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
-	switch (aDma << 8 & aDmaChannel) {
-		case (1 << 8) & 1:
+	switch (aDma << 8 | aDmaChannel) {
+		case (1 << 8) | 1:
 			return sDma1Channel1Buffer;
 	}
 

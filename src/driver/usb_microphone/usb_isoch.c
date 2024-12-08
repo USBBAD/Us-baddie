@@ -23,6 +23,7 @@
 
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/usb.h"
+#include "system/stat.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/ushelp.h"
@@ -96,6 +97,7 @@ static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 {
 	transmitBoundChecked();
 	if (isTxStateFinished() && gUsbMicrophoneHook) {
+		++gSysStat.usbIsochPackets;
 		gUsbMicrophoneHook->onChunkTransmitted();
 	}
 	if (!usbMicrophoneIsEnabled()) {

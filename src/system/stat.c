@@ -49,17 +49,20 @@ struct Stat gSysStat;
 
 void sysStatPrint()
 {
+	usvprintf("--- uptime [s]: ");
+	usDebugPrintHex32(timeGetUptimeUs() / 1000000);
+	usvprintf("\r\n");
 	usvprintf("ISOCH:      ");
 	usDebugPrintHex32(gSysStat.usbIsochPackets);
-	usvprintf("\r\n");
-	usvprintf("uptime [s]: ");
-	usDebugPrintHex32(timeGetUptimeUs() / 1000000);
 	usvprintf("\r\n");
 	usvprintf("mic. en.:   ");
 	usDebugPrintHex8(usbMicrophoneIsEnabled());
 	usvprintf("\r\n");
 	usvprintf("USB errors: ");
 	usDebugPrintHex32(gSysStat.usbErr);
+	usvprintf("\r\n");
+	usvprintf("ISOCH[B]:   ");
+	usDebugPrintHex32(gSysStat.usbIsochB);
 	usvprintf("\r\n");
 }
 

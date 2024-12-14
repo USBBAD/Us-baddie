@@ -29,6 +29,7 @@ enum StatUsbErr {
 struct Stat {
 	uint32_t usbIsochPackets; /**< # Of USB ISOCH packets */
 	enum StatUsbErr usbErr;
+	uint32_t usbIsochB; /**< Amount of transferred data in USB isoch packets, [B] */
 };
 
 #ifndef __ASSEMBLY__

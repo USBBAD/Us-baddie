@@ -12,6 +12,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define US_AUDIO_STAT_PERIOD_UPDATE_US (2000000)
+#define US_AUDIO_DMA_NUM (1)
+#define US_AUDIO_DMA_CHAN (1)
+
 /****************************************************************************
  * Included files
  ****************************************************************************/
@@ -22,6 +26,7 @@
 #include "system/stat.h"
 #include "system/time.h"
 #include "utility/debug.h"
+#include "utility/ushelp.h"
 
 /****************************************************************************
  * Private Types
@@ -31,9 +36,13 @@
  * Private Function Prototypes
  ****************************************************************************/
 
+static void updateAudioStats();
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+static uint64_t sLastStatUpdateUs = 0;
 
 /****************************************************************************
  * Public Data
@@ -43,9 +52,26 @@
  * Private Functions
  ****************************************************************************/
 
+static void updateAudioStats()
+{
+	// Check timeout
+	const uint64_t now = timeGetUptimeUs();
+	if (now - sLastStatUpdateUs > US_AUDIO_STAT_PERIOD_UPDATE_US) {
+		sLastStatUpdateUs = now;
+	} else {
+		return;
+	}
+
+	// Get the mean
+	{
+		uint16_t dmaBufSz;
+		const uint16_t *dmaBuf = dmaGetBufferIsr(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, &dmaBufSz);
+		gSysStat.audioMean = (uint16_t)(usSumU16(dmaBuf, dmaBufSz) / (uint16_t)dmaBufSz);
+	}
+}
+
 static void onAdcDmaIsr(void)
 {
-//	usDebugPushMessage(0, "got DMA ISR");
 	adcStopIsr();
 }
 
@@ -56,9 +82,9 @@ static void onAdcDmaIsr(void)
 void taskRunAudio(void)
 {
 	uint16_t dmaBufSz;
-	const uint16_t *dmaBuffer = dmaGetBufferIsr(1, 1, &dmaBufSz);
+	const uint16_t *dmaBuffer = dmaGetBufferIsr(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, &dmaBufSz);
 	usbMicrophoneInitAudio(dmaBuffer, dmaBufSz);
-	dmaSetIsrHook(1, 1, onAdcDmaIsr);
+	dmaSetIsrHook(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, onAdcDmaIsr);
 	const uint64_t kMultisamplePeriodUs = 200000;
 	uint64_t now = timeGetUptimeUs();
 	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
@@ -66,6 +92,7 @@ void taskRunAudio(void)
 		now = timeGetUptimeUs();
 		adcStart();
 		timeBusywaitUs(2000000);
+		updateAudioStats();
 
 #if 0
 		usvprintf("Audio L, R, L, R,...");

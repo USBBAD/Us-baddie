@@ -15,5 +15,21 @@
 #define US_GET_BIT(value, mask, offset) ((value & mask) >> offset)
 #define US_CLAMP(a, b, val) (US_MAX(a, US_MIN(b, val)))
 #define US_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#define US_ASSERT(a)
+
+#include <stddef.h>
+#include <stdint.h>
+
+#define US_ARR_SUM_IMPL(FNAME, TYPEOUT, TYPEIN)                \
+static inline TYPEOUT FNAME(const TYPEIN *aBuf, size_t aSz)    \
+{                                                              \
+	US_ASSERT(aBuf != 0);                                      \
+	TYPEOUT res = 0;                                           \
+	for (size_t i = 0; i < aSz; ++i) {                         \
+		res += aBuf[i];                                        \
+	}                                                          \
+	return res;                                                \
+}
+US_ARR_SUM_IMPL(usSumU16, uint32_t, uint16_t)
 
 #endif // USBAD_USHELP_H_

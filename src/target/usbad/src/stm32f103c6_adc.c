@@ -30,14 +30,11 @@ void stm32f103c6AdcUp()
 
 	// Configure conversion sequence
 
-	// 2 conversions
-	adc->SQR1 |= ADC_SQR1_L_0;
+	// "b0000": 1 conversion
+	adc->SQR1 |= 0 << 20;
 
 	// Use ADC12_IN1 (PA1) as first conversion
 	adc->SQR3 |= 1;
-
-	// Use ADC12_IN2 (PA2) as second conversion
-	adc->SQR3 |= 2 << 5;
 
 	// Start conversion
 	adc->CR2 |= ADC_CR2_SWSTART;

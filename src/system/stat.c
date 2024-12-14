@@ -64,6 +64,9 @@ void sysStatPrint()
 	usvprintf("ISOCH[B]:   ");
 	usDebugPrintHex32(gSysStat.usbIsochB);
 	usvprintf("\r\n");
+	usvprintf("audio mean: ");
+	usDebugPrintHex16(gSysStat.audioMean);
+	usvprintf("\r\n");
 }
 
 void sysStatReset()

@@ -30,6 +30,7 @@ struct Stat {
 	uint32_t usbIsochPackets; /**< # Of USB ISOCH packets */
 	enum StatUsbErr usbErr;
 	uint32_t usbIsochB; /**< Amount of transferred data in USB isoch packets, [B] */
+	uint16_t audioMean; /**< Audio channel, mean value */
 };
 
 #ifndef __ASSEMBLY__

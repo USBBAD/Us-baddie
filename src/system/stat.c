@@ -67,6 +67,9 @@ void sysStatPrint()
 	usvprintf("audio mean: ");
 	usDebugPrintHex16(gSysStat.audioMean);
 	usvprintf("\r\n");
+	usvprintf("audio ampl.:");
+	usDebugPrintHex16(gSysStat.audioAmplitude);
+	usvprintf("\r\n");
 }
 
 void sysStatReset()

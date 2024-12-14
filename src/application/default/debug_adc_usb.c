@@ -67,6 +67,7 @@ static void updateAudioStats()
 		uint16_t dmaBufSz;
 		const uint16_t *dmaBuf = dmaGetBufferIsr(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, &dmaBufSz);
 		gSysStat.audioMean = (uint16_t)(usSumU16(dmaBuf, dmaBufSz) / (uint16_t)dmaBufSz);
+		gSysStat.audioAmplitude = (uint16_t)(usMaxU16(dmaBuf, dmaBufSz) - usMinU16(dmaBuf, dmaBufSz));
 	}
 }
 
@@ -85,9 +86,7 @@ void taskRunAudio(void)
 	const uint16_t *dmaBuffer = dmaGetBufferIsr(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, &dmaBufSz);
 	usbMicrophoneInitAudio(dmaBuffer, dmaBufSz);
 	dmaSetIsrHook(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, onAdcDmaIsr);
-	const uint64_t kMultisamplePeriodUs = 200000;
 	uint64_t now = timeGetUptimeUs();
-	uint64_t nextSampleTimestamp = now + kMultisamplePeriodUs;
 	while (1) {
 		now = timeGetUptimeUs();
 		adcStart();

@@ -98,7 +98,7 @@ void taskRunAudio(void)
 		usDebugPrintU16Array(dmaBuffer, 16);
 		usvprintf("\r\n");
 #endif
-		sysStatPrint();
+		sysStatPrintPeriod(1000000);
 //		usDebugIterDebugLoop();
 	}
 }

@@ -33,6 +33,8 @@
  * Private Data
  ****************************************************************************/
 
+uint64_t sLastPrintUs = 0;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -70,6 +72,15 @@ void sysStatPrint()
 	usvprintf("audio ampl.:");
 	usDebugPrintHex16(gSysStat.audioAmplitude);
 	usvprintf("\r\n");
+}
+
+void sysStatPrintPeriod(uint64_t aPeriodUs)
+{
+	uint64_t now = timeGetUptimeUs();
+	if (now - sLastPrintUs > aPeriodUs) {
+		sLastPrintUs = now;
+		sysStatPrint();
+	}
 }
 
 void sysStatReset()

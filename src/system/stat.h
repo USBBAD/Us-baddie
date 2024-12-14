@@ -55,6 +55,7 @@ extern struct Stat gSysStat;
 ****************************************************************************/
 
 void sysStatPrint();
+void sysStatPrintPeriod(uint64_t aPeriodUs);
 void sysStatReset();
 
 /****************************************************************************

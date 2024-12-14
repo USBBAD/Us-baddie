@@ -9,13 +9,14 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define DMA_U16_BUFIZE (64) /**< Buffer size for converted audio */
+#define DMA_U16_BUFIZE (32) /**< Buffer size for converted audio */
 #define NCONVERSIONS (DMA_U16_BUFIZE)
 
 /****************************************************************************
  * Included files
  ****************************************************************************/
 
+#include "utility/ushelp.h"
 #include <stm32f103x6.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -136,6 +137,7 @@ void *dmaGetBufferIsr(int aDma, int aDmaChannel, uint16_t *aOutDmaBufferSize)
 	// Byte pack (dma, channel) -> (0x0000<u8_1><u8_2>)
 	switch (aDma << 8 | aDmaChannel) {
 		case (1 << 8) | 1:
+			*aOutDmaBufferSize = US_ARRAY_SIZE(sDma1Channel1Buffer);
 			return sDma1Channel1Buffer;
 	}
 

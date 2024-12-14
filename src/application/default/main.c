@@ -18,7 +18,6 @@
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/dma.h"
 #include "hal/uart.h"
-#include "sys/stat.h"
 #include "system/time.h"
 #include "target/target.h"
 #include "utility/debug.h"

@@ -5,9 +5,25 @@
 //     Author: Dmitry Murashov (dmtr <DOT> murashov <AT> <GMAIL> <DOT> <COM>)
 //
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included files
+ ****************************************************************************/
+
 #include "stm32f103c6_uart.h"
 #include <stm32f103x6.h>
 #include <stdint.h>
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
 static void clockInitializeHse72Mhz(void);
 static void clockInitializeHsi48Mhz();
@@ -18,16 +34,33 @@ static void enableGpioAClock();
 static void enableDma1Clock();
 static void enableUsart1Clock();
 
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
 static uint64_t sSysclk;
 static uint64_t sApb1Pre = 1;
 static uint64_t sApb2Pre = 1;
 static uint64_t sAhbPre = 1;
 
-// \details Necessary to get USB operating (stm32f103x6 datasheet, DocID15060
-// Rev 7)
-// RCC APB1 frequency = 72000000;
-// RCC APB2 frequency = 36000000;
-// RCC AHB frequency = 72000000;
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/** \details Necessary to get USB operating (stm32f103x6 datasheet, DocID15060
+ * Rev 7)
+ * RCC APB1 frequency = 72000000;
+ * RCC APB2 frequency = 36000000;
+ * RCC AHB frequency = 72000000;
+ */
 static void clockInitializeHse72Mhz(void)
 {
 	volatile RCC_TypeDef *rcc = RCC;

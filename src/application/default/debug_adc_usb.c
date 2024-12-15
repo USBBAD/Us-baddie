@@ -89,8 +89,8 @@ void taskRunAudio(void)
 	uint64_t now = timeGetUptimeUs();
 	while (1) {
 		now = timeGetUptimeUs();
+//		timeBusywaitUs(20);
 		adcStart();
-		timeBusywaitUs(2000000);
 		updateAudioStats();
 
 #if 0

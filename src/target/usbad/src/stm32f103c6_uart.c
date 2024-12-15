@@ -89,9 +89,6 @@ static struct Tx sUart1Tx;
 
 static void configureGpio();
 
-/// \brief Input clock frequency for usart
-static uint32_t getUsart1InputClockFrequency();
-
 /// \brief see RM0008, rev. 21, p. 1136, "Fractional baudrate"
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency);
 
@@ -134,11 +131,6 @@ static void configureGpio()
 		gpio->ODR |= GPIO_ODR_ODR10;  // Pull up (RM0008 rev 21 p 161)
 	}
 #endif //  USBAD_STM32F103C6_ENABLE_USART_1
-}
-
-static uint32_t getUsart1InputClockFrequency()
-{
-	return clockGetSysclkFrequency() / clockGetApb2Prescaler() / clockGetAhbPrescaler();
 }
 
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency)

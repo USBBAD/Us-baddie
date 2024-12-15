@@ -14,6 +14,7 @@
  ****************************************************************************/
 
 #include "clock.h"
+#include "driver/usb_microphone/audio.h"
 #include "driver/usb_microphone/stub.h"
 #include "driver/usb_microphone/usb_microphone.h"
 #include "stm32f103c6_adc.h"
@@ -97,5 +98,4 @@ void targetInitialize(void)
 	initializeGpio();
 	usbInitialize();
 	usbMicrophoneInitUsbDriver();
-	usbMicrophoneInitStub();
 }

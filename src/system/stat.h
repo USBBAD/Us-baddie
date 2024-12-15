@@ -1,18 +1,18 @@
 /**
- * stub.h
+ * stat.h
  *
- * Created on: July 31, 2024
+ * Created on: December 08, 2024
  *     Author: Dmitry Murashov
- * 
- * Stub driver
  */
 
-#ifndef SRC_DRIVER_USB_MICROPHONE_STUB_H_
-#define SRC_DRIVER_USB_MICROPHONE_STUB_H_
+#ifndef SRC_SYSTEM_STAT_H_
+#define SRC_SYSTEM_STAT_H_
 
 /****************************************************************************
 * Included Files
 ****************************************************************************/
+
+#include <stdint.h>
 
 /****************************************************************************
 * Pre-processor Definitions
@@ -21,6 +21,18 @@
 /****************************************************************************
 * Public Types
 ****************************************************************************/
+
+enum StatUsbErr {
+	StatUsbErrNoEpBuffer = 0x1,
+};
+
+struct Stat {
+	uint32_t usbIsochPackets; /**< # Of USB ISOCH packets */
+	enum StatUsbErr usbErr;
+	uint32_t usbIsochB; /**< Amount of transferred data in USB isoch packets, [B] */
+	uint16_t audioMean; /**< Audio channel, mean value */
+	uint16_t audioAmplitude;
+};
 
 #ifndef __ASSEMBLY__
 
@@ -36,15 +48,15 @@ extern "C"
 #define EXTERN extern
 #endif
 
+extern struct Stat gSysStat;
+
 /****************************************************************************
 * Public Function Prototypes
 ****************************************************************************/
 
-/**
- * @brief usbMicrophoneInitStub Initializes stub microphone functionality
- * which transmits some artificially-generated soundwave
- */
-void usbMicrophoneInitStub();
+void sysStatPrint();
+void sysStatPrintPeriod(uint64_t aPeriodUs);
+void sysStatReset();
 
 /****************************************************************************
  * Inline Functions
@@ -57,4 +69,5 @@ void usbMicrophoneInitStub();
 
 #endif  /* __ASSEMBLY__ */
 
-#endif /* SRC_DRIVER_USB_MICROPHONE_STUB_H_ */
+#endif /* SRC_SYSTEM_STAT_H_ */
+

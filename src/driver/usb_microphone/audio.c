@@ -1,21 +1,22 @@
-//
-// stm32f1_usb.h
-//
-// Created on: March 28, 2024
-//     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
-//
+/**
+ * audio.c
+ *
+ * Created on: September 15, 2024
+ *     Author: Dmitry Murashov
+ */
+
+#ifndef SRC_DRIVER_USB_MICROPHONE_AUDIO_C_
+#define SRC_DRIVER_USB_MICROPHONE_AUDIO_C_
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
-
 /****************************************************************************
  * Included files
  ****************************************************************************/
 
-#include <Driver_USBD.h>
+#include "driver/usb_microphone/usb_microphone.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,9 +28,23 @@
  * Private Function Prototypes
  ****************************************************************************/
 
+static void onEnabledStateChangedIsr(int aEnabled);
+static void onChunkTransmitted();
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/** \struct UsbMicrophoneHook is a high-level driver that handles buffer management
+ * during audio transmission
+ */
+static struct UsbMicrophoneHook sUsbMicrophoneHook = {
+	.onChunkTransmitted = onChunkTransmitted,
+	.onEnabledStateChangedIsr = onEnabledStateChangedIsr,
+};
+
+static const uint16_t *sMonoPcmBuf; /**< A pointer to external buffer */
+static size_t sMonoPcmBufSize;
 
 /****************************************************************************
  * Public Data
@@ -39,33 +54,30 @@
  * Private Functions
  ****************************************************************************/
 
-static inline uint32_t *bdtOffset2AhbOffset(size_t aUsbBdtInnerOffset)
+void onEnabledStateChangedIsr(int aEnabled)
 {
-	return (uint32_t *)(US_STM32F1_BDT_TABLE_AHB_ADDRESS + (aUsbBdtInnerOffset * 2));
+	if (aEnabled) {
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
+	}
+}
+
+void onChunkTransmitted()
+{
+	if (usbMicrophoneIsEnabled()) {
+		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
+	}
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_t aUsbBdtInnerOffset)
+void usbMicrophoneInitAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize)
 {
-	const uint32_t *currentOffset = bdtOffset2AhbOffset(aUsbBdtInnerOffset);
-
-	for (; aReadSequenceLength; --aReadSequenceLength) {
-		*aOutBuffer = (uint16_t)(*currentOffset);
-		++currentOffset;
-		++aOutBuffer;
-	}
+	sMonoPcmBuf = aMonoPcmBuf;
+	sMonoPcmBufSize = aBufSize;
+	usbMicrophoneSetHook(&sUsbMicrophoneHook);
 }
 
-void usStm32f1UsbWriteBdt(const uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
-{
-	uint32_t *currentOffset = bdtOffset2AhbOffset(aUsbBdtInnerOffset);
+#endif /* SRC_DRIVER_USB_MICROPHONE_AUDIO_C_ */
 
-	for (; aWriteSequenceLength; --aWriteSequenceLength) {
-		*currentOffset = *aInBuffer;
-		++aInBuffer;
-		++currentOffset;
-	}
-}

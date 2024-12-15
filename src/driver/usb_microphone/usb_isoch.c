@@ -5,7 +5,6 @@
 //     Author: Dmitry Murashov
 //
 
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -23,6 +22,7 @@
 
 #include "driver/usb_microphone/usb_microphone.h"
 #include "hal/usb.h"
+#include "system/stat.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/ushelp.h"
@@ -37,7 +37,7 @@ struct Ep1DriverState {
 	struct {
 		const uint8_t *current;
 		const uint8_t *end;
-	} txState;
+	} txState; /**< Keeps track of multi-chunk transactions */
 };
 
 /****************************************************************************
@@ -70,6 +70,7 @@ static struct Ep1DriverState sEp1DriverState = {
 };
 
 static int sInitializeOnceFlag = 0;
+static uint16_t sUsbBytesCommit = 0;
 
 /****************************************************************************
  * Public Data
@@ -96,6 +97,11 @@ static void ep1OnTx(struct HalUsbDeviceDriver *aDriver, union HalUsbDeviceContex
 {
 	transmitBoundChecked();
 	if (isTxStateFinished() && gUsbMicrophoneHook) {
+		++gSysStat.usbIsochPackets;
+		/* Save the amount of transferred bytes */
+		gSysStat.usbIsochB += sUsbBytesCommit;
+		sUsbBytesCommit = 0;
+
 		gUsbMicrophoneHook->onChunkTransmitted();
 	}
 	if (!usbMicrophoneIsEnabled()) {
@@ -134,6 +140,7 @@ static void transmitBoundChecked()
 	if (bufferSize && sEp1DriverState.txState.current) {
 		halUsbDeviceWriteTxIsr(&sep1UsbDriver, 1, sEp1DriverState.txState.current, bufferSize, 0);
 		advanceTxState(bufferSize);
+		sUsbBytesCommit = bufferSize;
 	} else {
 		setTxState(0, 0); // Reset
 	}

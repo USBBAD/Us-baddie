@@ -1,23 +1,25 @@
-//
-// stm32f1_usb.h
-//
-// Created on: March 28, 2024
-//     Author: Dmitry Murashov (dmtr DOT murashov AT GMAIL)
-//
+/**
+ * stat.c
+ *
+ * Created on: December 08, 2024
+ *     Author: Dmitry Murashov
+ */
+
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
-
 /****************************************************************************
  * Included files
  ****************************************************************************/
 
-#include <Driver_USBD.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "driver/usb_microphone/usb_microphone.h"
+#include "system/time.h"
+#include "utility/debug.h"
+#include <string.h>
+
+#include "stat.h"
 
 /****************************************************************************
  * Private Types
@@ -31,41 +33,57 @@
  * Private Data
  ****************************************************************************/
 
+uint64_t sLastPrintUs = 0;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+struct Stat gSysStat;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static inline uint32_t *bdtOffset2AhbOffset(size_t aUsbBdtInnerOffset)
-{
-	return (uint32_t *)(US_STM32F1_BDT_TABLE_AHB_ADDRESS + (aUsbBdtInnerOffset * 2));
-}
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void usStm32f1UsbReadBdt(uint16_t *aOutBuffer, size_t aReadSequenceLength, size_t aUsbBdtInnerOffset)
+void sysStatPrint()
 {
-	const uint32_t *currentOffset = bdtOffset2AhbOffset(aUsbBdtInnerOffset);
+	usvprintf("--- uptime [s]: ");
+	usDebugPrintHex32(timeGetUptimeUs() / 1000000);
+	usvprintf("\r\n");
+	usvprintf("ISOCH:      ");
+	usDebugPrintHex32(gSysStat.usbIsochPackets);
+	usvprintf("\r\n");
+	usvprintf("mic. en.:   ");
+	usDebugPrintHex8(usbMicrophoneIsEnabled());
+	usvprintf("\r\n");
+	usvprintf("USB errors: ");
+	usDebugPrintHex32(gSysStat.usbErr);
+	usvprintf("\r\n");
+	usvprintf("ISOCH[B]:   ");
+	usDebugPrintHex32(gSysStat.usbIsochB);
+	usvprintf("\r\n");
+	usvprintf("audio mean: ");
+	usDebugPrintHex16(gSysStat.audioMean);
+	usvprintf("\r\n");
+	usvprintf("audio ampl.:");
+	usDebugPrintHex16(gSysStat.audioAmplitude);
+	usvprintf("\r\n");
+}
 
-	for (; aReadSequenceLength; --aReadSequenceLength) {
-		*aOutBuffer = (uint16_t)(*currentOffset);
-		++currentOffset;
-		++aOutBuffer;
+void sysStatPrintPeriod(uint64_t aPeriodUs)
+{
+	uint64_t now = timeGetUptimeUs();
+	if (now - sLastPrintUs > aPeriodUs) {
+		sLastPrintUs = now;
+		sysStatPrint();
 	}
 }
 
-void usStm32f1UsbWriteBdt(const uint16_t *aInBuffer, size_t aWriteSequenceLength, size_t aUsbBdtInnerOffset)
+void sysStatReset()
 {
-	uint32_t *currentOffset = bdtOffset2AhbOffset(aUsbBdtInnerOffset);
-
-	for (; aWriteSequenceLength; --aWriteSequenceLength) {
-		*currentOffset = *aInBuffer;
-		++aInBuffer;
-		++currentOffset;
-	}
+	memset(&gSysStat, 0, sizeof(struct Stat));
 }

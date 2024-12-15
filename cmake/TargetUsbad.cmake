@@ -25,6 +25,8 @@ file(GLOB_RECURSE COMMON_SOURCES
 		"src/driver/*.s"
 		"src/hal/*.c"
 		"src/hal/*.cpp"
+		"src/system/*.c"
+		"src/system/*.cpp"
 		"src/target/arm/*.c"
 		"src/target/arm/stm32f1/*.c"
 		"src/target/usbad/*.c"

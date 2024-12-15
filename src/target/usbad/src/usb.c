@@ -25,6 +25,8 @@
  */
 #define USBAD_DEBUG_REGDUMP_FIFO_SIZE (4)
 
+#define US_STM32F1_BDT_TABLE_AHB_ADDRESS (0x40006000)
+
 /****************************************************************************
  * Included files
  ****************************************************************************/
@@ -32,6 +34,7 @@
 #include "arm/stm32f1/stm32f1_usb.h"
 #include "arm/stm32f1/stm32f1_usb_bdt_layout.h"
 #include "hal/usb.h"
+#include "system/stat.h"
 #include "utility/debug.h"
 #include "utility/debug_regdump.h"
 #include "utility/fifo.h"
@@ -77,6 +80,8 @@ static uint16_t sTransactBuffer[128] = {0};
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
+volatile BdtLayout *gUsbBdt = (BdtLayout *)US_STM32F1_BDT_TABLE_AHB_ADDRESS;
 
 /****************************************************************************
  * Private Functions
@@ -287,6 +292,7 @@ void halUsbDeviceWriteTxIsr(struct HalUsbDeviceDriver *aDriver, uint8_t aEndpoin
 	volatile uint32_t *out = getTxBufferAhb(aEndpoint);
 	if (!out) {
 		usDebugPushMessage(0, "![usb] Couldn't get EP buffer");
+		gSysStat.usbErr |= StatUsbErrNoEpBuffer;
 		return;
 	}
 	size_t remaining = aSize / 2;

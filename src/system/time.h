@@ -46,6 +46,14 @@ uint64_t timeGetUptimeUs();
  * Inline Functions
  ****************************************************************************/
 
+static inline uint64_t timeBusywaitUs(uint64_t aDurationUs)
+{
+	uint64_t stamp = timeGetUptimeUs() + aDurationUs;
+	while (timeGetUptimeUs() < stamp) {
+		/* Empty */
+	}
+}
+
 #undef EXTERN
 #ifdef __cplusplus
 }

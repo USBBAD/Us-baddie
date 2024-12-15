@@ -57,7 +57,7 @@ void onChunkTransmitted();
  * Private Data
  ****************************************************************************/
 
-struct WaveGenerationState sWaveGenerationState = {
+static struct WaveGenerationState sWaveGenerationState = {
 	.counter = US_RANGE_A,
 	.rangeA = US_RANGE_A,
 	.rangeB = US_RANGE_B,
@@ -69,7 +69,7 @@ struct WaveGenerationState sWaveGenerationState = {
 /** \struct UsbMicrophoneHook is a high-level driver that handles buffer management
  * during audio transmission
  */
-struct UsbMicrophoneHook sUsbMicrophoneHook = {
+static struct UsbMicrophoneHook sUsbMicrophoneHook = {
 	.onChunkTransmitted = onChunkTransmitted,
 	.onEnabledStateChangedIsr = onEnabledStateChangedIsr,
 };

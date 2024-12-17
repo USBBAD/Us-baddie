@@ -8,7 +8,7 @@
 /*************************************************************************************/
 /* Symbols */
 
-    FREQ = 192000
+    FREQ = 32000
 
     EP0_BUF_SZ = 64    /* Must cohere to C definition */
     EP1_BUF_SZ = 64    /* Must cohere to C definition */

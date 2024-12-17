@@ -15,7 +15,7 @@
 #define US_GET_BIT(value, mask, offset) ((value & mask) >> offset)
 #define US_CLAMP(a, b, val) (US_MAX(a, US_MIN(b, val)))
 #define US_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-#define US_ASSERT(a)
+#define US_ASSERT(a) do {} while (!(a))
 
 #include <stddef.h>
 #include <stdint.h>

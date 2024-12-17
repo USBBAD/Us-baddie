@@ -9,6 +9,11 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define US_CLOCK_AHBPRE (2)
+#define US_CLOCK_APB1PRE (2)
+#define US_CLOCK_APB2PRE (2)
+#define US_CLOCK_ADCPRE (8)
+
 /****************************************************************************
  * Included files
  ****************************************************************************/
@@ -39,9 +44,6 @@ static void enableUsart1Clock();
  ****************************************************************************/
 
 static uint64_t sSysclk;
-static uint64_t sApb1Pre = 1;
-static uint64_t sApb2Pre = 1;
-static uint64_t sAhbPre = 1;
 
 /****************************************************************************
  * Public Data
@@ -84,14 +86,40 @@ static void clockInitializeHse72Mhz(void)
 	flash->ACR &= ~FLASH_ACR_LATENCY;
 	flash->ACR |= FLASH_ACR_LATENCY_2;
 
-	// HCLK = SYSCLK
+	/* HCLK = SYSCLK / AHBPRE */
+#if US_CLOCK_AHBPRE == 1
 	rcc->CFGR |= RCC_CFGR_HPRE_DIV1;
+#elif US_CLOCK_AHBPRE == 2
+	rcc->CFGR |= RCC_CFGR_HPRE_DIV2;
+#else
+#  error "Missing clock configuration for AHBPRE"
+#endif /* US_CLOCK_AHBPRE */
 
-	// PCLK2 = HCLK
+	/* PCLK2 = HCLK / US_CLOCK_APB2PRE */
+#if US_CLOCK_APB2PRE == 1
 	rcc->CFGR |= RCC_CFGR_PPRE2_DIV1;
+#elif US_CLOCK_APB2PRE == 2
+	rcc->CFGR |= RCC_CFGR_PPRE2_DIV2;
+#elif US_CLOCK_APB2PRE == 4
+	rcc->CFGR |= RCC_CFGR_PPRE2_DIV4;
+#else
+#  error "Missing clock configuration for APBPRE2"
+#endif
+
+#if US_CLOCK_ADCPRE == 8
+	rcc->CFGR |= RCC_CFGR_ADCPRE_DIV8;
+#else
+#  error "Missing clock configuration for ADCPRE"
+#endif
 
 	// PCLK1 = HCLK/2
+#if US_CLOCK_APB1PRE == 2
 	rcc->CFGR |= RCC_CFGR_PPRE1_DIV2;
+#else
+#  error "Missing clock configuration for APB1PRE"
+#endif
+
+	/* ADC prescaler = HCLK / US_CLOCK_ADCPRE */
 
 	//  PLL configuration: PLLCLK = HSE * 9 = 72 MHz
 	rcc->CFGR &= ~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL);
@@ -212,15 +240,15 @@ uint32_t clockGetSysclkFrequency()
 
 uint32_t clockGetAhbPrescaler()
 {
-	return sAhbPre;
+	return US_CLOCK_AHBPRE;
 }
 
 uint32_t clockGetApb1Prescaler()
 {
-	return sApb1Pre;
+	return US_CLOCK_APB1PRE;
 }
 
 uint32_t clockGetApb2Prescaler()
 {
-	return sApb2Pre;
+	return US_CLOCK_APB2PRE;
 }

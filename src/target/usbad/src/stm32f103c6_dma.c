@@ -9,7 +9,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define DMA_U16_BUFIZE (32) /**< Buffer size for converted audio */
+#define DMA_U16_BUFIZE (64) /**< Buffer size for converted audio */
 #define NCONVERSIONS (DMA_U16_BUFIZE)
 
 /****************************************************************************
@@ -36,7 +36,8 @@
 static uint16_t sDma1Channel1Buffer[DMA_U16_BUFIZE] = {0};
 static void configureAudio();
 typedef void (*DmaHookCallback)();
-static void (*sDma1Channel1IsrHook)();
+static void (*sDma1Channel1IsrHook)(); /**< Gets involved when the buffer is filled */
+static void (*sDma1Channel1HalfTransferIsrHook)(); /**< Gets invoked when half of the buffer is empty */
 
 /****************************************************************************
  * Public Data
@@ -50,12 +51,13 @@ static void (*sDma1Channel1IsrHook)();
  * Public Functions
  ****************************************************************************/
 
-void dmaSetIsrHook(int aDma, int aChannel, DmaHookCallback aCallback)
+void dmaSetIsrHook(int aDma, int aChannel, DmaHookCallback aCallback,
+	DmaHookCallback aHalfTransferCallback)
 {
 	switch (aDma << 8 & aChannel) {
 		case (1 << 8 ) & 1:
 			sDma1Channel1IsrHook = aCallback;
-
+			sDma1Channel1HalfTransferIsrHook = aHalfTransferCallback;
 			break;
 
 		default:
@@ -71,6 +73,8 @@ void dma1Channel1Isr()
 	// TODO: restart DMA (if not in circular mode)
 	if (sDma1Channel1IsrHook && (dma->ISR & DMA_ISR_TCIF1)) {
 		sDma1Channel1IsrHook();
+	} else if (sDma1Channel1HalfTransferIsrHook && (dma->ISR & DMA_ISR_HTIF1)) {
+		sDma1Channel1HalfTransferIsrHook();
 	}
 
 	// clear DMA interrupts for channel 1
@@ -119,7 +123,9 @@ static void configureAudio()
 	// Enable inerrupt on "Transfer complete" event
 	dmaChannel->CCR |= DMA_CCR_TCIE
 		// Enable interrupt on "Transfer error"
-		| DMA_CCR_TEIE;
+		| DMA_CCR_TEIE
+		/* Half-transfer interrupt enable */
+		| DMA_CCR_HTIE;
 
 	// Enable channel
 	dmaChannel->CCR |= DMA_CCR_EN;

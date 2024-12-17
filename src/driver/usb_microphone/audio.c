@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "audio.h"
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -43,9 +45,6 @@ static struct UsbMicrophoneHook sUsbMicrophoneHook = {
 	.onEnabledStateChangedIsr = onEnabledStateChangedIsr,
 };
 
-static const uint16_t *sMonoPcmBuf; /**< A pointer to external buffer */
-static size_t sMonoPcmBufSize;
-
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -57,27 +56,27 @@ static size_t sMonoPcmBufSize;
 void onEnabledStateChangedIsr(int aEnabled)
 {
 	if (aEnabled) {
-		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
+		usbAudioOnTransmitted();
 	}
 }
 
 void onChunkTransmitted()
 {
-	if (usbMicrophoneIsEnabled()) {
-		usbMicrophoneSetMonoPcm16Buffer(&sMonoPcmBuf[0], sMonoPcmBufSize);
-	}
+	usbAudioOnTransmitted();
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void usbMicrophoneInitAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize)
+void usbMicrophoneInitAudio()
 {
-	sMonoPcmBuf = aMonoPcmBuf;
-	sMonoPcmBufSize = aBufSize;
 	usbMicrophoneSetHook(&sUsbMicrophoneHook);
 }
 
-#endif /* SRC_DRIVER_USB_MICROPHONE_AUDIO_C_ */
+void usbMicrophonePushAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize)
+{
+	usbMicrophoneSetMonoPcm16Buffer(&aMonoPcmBuf[0], aBufSize);
+}
 
+#endif /* SRC_DRIVER_USB_MICROPHONE_AUDIO_C_ */

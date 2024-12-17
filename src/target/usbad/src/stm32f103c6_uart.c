@@ -135,7 +135,7 @@ static void configureGpio()
 
 static uint32_t calculateBrrRegisterValue(uint32_t aBaudrate, uint32_t aInputFrequency)
 {
-	const float usartDivf = (float)aInputFrequency  / (float)aBaudrate / USBAD_STM32F103C6_USARTDIV_COEFFICIENT;
+	const float usartDivf = ((float)aInputFrequency  / (float)aBaudrate) / USBAD_STM32F103C6_USARTDIV_COEFFICIENT;
 	const uint32_t mantissa = (uint32_t)usartDivf;
 	float fractionf = usartDivf - (float)mantissa;
 	uint32_t fraction;

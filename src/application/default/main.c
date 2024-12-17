@@ -74,7 +74,7 @@ int main(void)
 	memoryInitialize();
 	sysStatReset();
 	targetInitialize();
-	uartConfigure(1, 921600);
+	uartConfigure(1, 460800);
 
 	// Configure logging
 	usvprintfSetPuts(uartPuts);

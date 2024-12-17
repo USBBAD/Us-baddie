@@ -41,7 +41,9 @@ extern "C"
 * Public Function Prototypes
 ****************************************************************************/
 
-void usbMicrophoneInitAudio(const uint16_t *aMonoPcmBuf, size_t aBufSize);
+void usbMicrophoneInitAudio();
+void usbMicrophonePushAudio(const uint16_t *sMonoPcmBuf, size_t aBufSize);
+void usbAudioOnTransmitted();
 
 /****************************************************************************
  * Inline Functions

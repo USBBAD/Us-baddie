@@ -9,7 +9,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define USBAD_ADC_SMPR (55) /**< \def Offset for ADC SMPR, number of cycles to skip for single sample */
+#define USBAD_ADC_SMPR (71) /**< \def Offset for ADC SMPR, number of cycles to skip for single sample */
 
 /****************************************************************************
  * Included files
@@ -66,6 +66,10 @@ void stm32f103c6AdcUp()
 	Sampling frequency = SYSCLK / (AHBPRE * APB2PRE * ADCPRE * (12.5 + (USBAD_ADC_SMPR + 0.5))) */
 #if USBAD_ADC_SMPR == 55
 	adc->SMPR2 |= 0b101 << ADC_SMPR2_SMP6_Pos;
+#elif USBAD_ADC_SMPR == 71
+	adc->SMPR2 |= 0b110 << ADC_SMPR2_SMP6_Pos;
+#elif USBAD_ADC_SMPR == 239
+	adc->SMPR2 |= 0b111 << ADC_SMPR2_SMP6_Pos;
 #else
 	error "Unsupported configuration for ADC SMPR"
 #endif

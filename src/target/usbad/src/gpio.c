@@ -24,6 +24,8 @@
 
 enum Gpio {
 	GpioPc13 = 0,
+	GpioPa6 = 1,
+	GpioPa7 = 2,
 };
 
 /****************************************************************************
@@ -52,6 +54,11 @@ void initializeGpio(void)
 	/* Initialize PC13 as open-drain */
 	GPIOC->CRH = 0b01 << GPIO_CRH_CNF13_Pos
 		| 0b11 << GPIO_CRH_MODE13_Pos;
+
+	/* Initialize debug pins: PA6, PA7. Output, push-pull */
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+	GPIOA-> CRL |= 0b11 << GPIO_CRL_MODE7_Pos
+		| 0b11 << GPIO_CRL_MODE6_Pos;
 }
 
 /**
@@ -64,6 +71,14 @@ void usDebugSetLed(int aLed, int aState)
 	switch (aLed) {
 		case GpioPc13:
 			GPIOC->BSRR |= aState ? (1 << GPIO_BSRR_BR13_Pos) : (1 << GPIO_BSRR_BS13_Pos);
+			break;
+
+		case GpioPa6:
+			GPIOA->BSRR |= aState ? (1 << GPIO_BSRR_BR6_Pos) : (1 << GPIO_BSRR_BS6_Pos);
+			break;
+
+		case GpioPa7:
+			GPIOA->BSRR |= aState ? (1 << GPIO_BSRR_BR7_Pos) : (1 << GPIO_BSRR_BS7_Pos);
 			break;
 	}
 }

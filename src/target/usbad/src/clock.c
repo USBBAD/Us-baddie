@@ -11,7 +11,7 @@
 
 #define US_CLOCK_AHBPRE (2)
 #define US_CLOCK_APB1PRE (2)
-#define US_CLOCK_APB2PRE (2)
+#define US_CLOCK_APB2PRE (8)
 #define US_CLOCK_ADCPRE (8)
 
 /****************************************************************************
@@ -102,6 +102,8 @@ static void clockInitializeHse72Mhz(void)
 	rcc->CFGR |= RCC_CFGR_PPRE2_DIV2;
 #elif US_CLOCK_APB2PRE == 4
 	rcc->CFGR |= RCC_CFGR_PPRE2_DIV4;
+#elif US_CLOCK_APB2PRE == 8
+	rcc->CFGR |= RCC_CFGR_PPRE2_DIV8;
 #else
 #  error "Missing clock configuration for APBPRE2"
 #endif

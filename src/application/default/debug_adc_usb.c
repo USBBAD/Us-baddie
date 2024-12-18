@@ -39,6 +39,7 @@
 static void updateAudioStats();
 static void onAdcDmaIsr(void);
 static void onAdcDmaHalfTransferIsr(void);
+static void scaleBuffer(uint16_t *aBuffer, uint16_t aBufferSize); /**< Converts U12 (ADC) to I16 (USB mono) w/ scaling */
 
 /****************************************************************************
  * Private Data
@@ -56,6 +57,14 @@ static int sDebugPin2State = 0;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static void scaleBuffer(uint16_t *aBuffer, uint16_t aBufferSize)
+{
+	int16_t *buffer = (int16_t *)aBuffer;
+	for (uint16_t i = 0; i < aBufferSize; ++i) {
+		buffer[i] = (buffer[i] - 2048) * 8;
+	}
+}
 
 static void updateAudioStats()
 {
@@ -80,6 +89,7 @@ static void onAdcDmaIsr(void)
 {
 	usDebugSetLed(1, 1);
 	/* push second half of the buffer */
+	scaleBuffer(sDmaAudioBuffer + sDmaBufferSize / 2, sDmaBufferSize / 2);
 	usbMicrophonePushAudio(sDmaAudioBuffer + sDmaBufferSize / 2, sDmaBufferSize / 2);
 }
 
@@ -87,6 +97,7 @@ static void onAdcDmaHalfTransferIsr(void)
 {
 	/* push the first half of the buffer */
 	usDebugSetLed(1, 0);
+	scaleBuffer(sDmaAudioBuffer, sDmaBufferSize / 2);
 	usbMicrophonePushAudio(sDmaAudioBuffer, sDmaBufferSize / 2);
 }
 

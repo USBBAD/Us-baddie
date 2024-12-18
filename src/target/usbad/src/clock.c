@@ -176,7 +176,6 @@ static inline void enableGpioAClock()
 {
 	volatile RCC_TypeDef *rcc = RCC;
 
-	// Enable DMA
 	rcc->APB2ENR |= RCC_APB2ENR_IOPAEN;
 }
 

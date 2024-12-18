@@ -47,6 +47,7 @@ static void onAdcDmaHalfTransferIsr(void);
 static uint64_t sLastStatUpdateUs = 0;
 static uint16_t *sDmaAudioBuffer;
 static uint16_t sDmaBufferSize = 0;
+static int sDebugPin2State = 0;
 
 /****************************************************************************
  * Public Data
@@ -77,6 +78,7 @@ static void updateAudioStats()
 
 static void onAdcDmaIsr(void)
 {
+	usDebugSetLed(1, 1);
 	/* push second half of the buffer */
 	usbMicrophonePushAudio(sDmaAudioBuffer + sDmaBufferSize / 2, sDmaBufferSize / 2);
 }
@@ -84,6 +86,7 @@ static void onAdcDmaIsr(void)
 static void onAdcDmaHalfTransferIsr(void)
 {
 	/* push the first half of the buffer */
+	usDebugSetLed(1, 0);
 	usbMicrophonePushAudio(sDmaAudioBuffer, sDmaBufferSize / 2);
 }
 
@@ -93,10 +96,14 @@ static void onAdcDmaHalfTransferIsr(void)
 
 void usbAudioOnTransmitted()
 {
+	usDebugSetLed(2, !sDebugPin2State);
+	sDebugPin2State = !sDebugPin2State;
 }
 
 void taskRunAudio(void)
 {
+	usDebugSetLed(1, 0);
+	usDebugSetLed(2, sDebugPin2State);
 	sDmaAudioBuffer = dmaGetBufferIsr(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, &sDmaBufferSize);
 	usbMicrophoneInitAudio();
 	dmaSetIsrHook(US_AUDIO_DMA_NUM, US_AUDIO_DMA_CHAN, onAdcDmaIsr, onAdcDmaHalfTransferIsr);
@@ -104,7 +111,6 @@ void taskRunAudio(void)
 	adcStart();
 	while (1) {
 		now = timeGetUptimeUs();
-//		timeBusywaitUs(20);
 		updateAudioStats();
 
 #if 0
@@ -113,7 +119,6 @@ void taskRunAudio(void)
 		usvprintf("\r\n");
 #endif
 		sysStatPrintPeriod(1000000);
-//		usDebugIterDebugLoop();
 	}
 }
 
